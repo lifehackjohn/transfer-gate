@@ -1,0 +1,1529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transfer Gate v2</title>
+<style>
+/* ── CSS Variables / Theming ── */
+:root {
+  --hdr-bg: #1e293b;
+  --hdr-fg: #f1f5f9;
+  --body-bg: #f8fafc;
+  --panel-bg: #ffffff;
+  --panel-border: #e2e8f0;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --green: #22c55e;
+  --green-bg: #f0fdf4;
+  --green-border: #bbf7d0;
+  --blue: #3b82f6;
+  --blue-bg: #eff6ff;
+  --blue-border: #bfdbfe;
+  --amber: #f59e0b;
+  --amber-bg: #fffbeb;
+  --amber-border: #fde68a;
+  --red: #ef4444;
+  --red-bg: #fef2f2;
+  --grey: #94a3b8;
+  --grey-bg: #f1f5f9;
+  --grey-border: #e2e8f0;
+  --radius: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.1);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: var(--font); font-size: 14px; color: var(--text); background: var(--body-bg); }
+
+/* ── App Shell ── */
+#app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+/* ── Header ── */
+.header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 16px; height: 48px; min-height: 48px;
+  background: var(--hdr-bg); color: var(--hdr-fg);
+  font-size: 14px; user-select: none;
+}
+.header .status-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.header .status-dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.header .status-dot.offline { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.header .status-dot.detecting { background: var(--grey); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{ opacity:.4; } 50%{ opacity:1; } }
+.header .title { font-weight: 600; font-size: 15px; white-space: nowrap; }
+.header .cabinet-info {
+  font-size: 12px; color: #94a3b8; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; max-width: 300px;
+}
+.header .cabinet-info .check { color: var(--green); }
+.header .spacer { flex: 1; }
+.header button, .header select {
+  background: rgba(255,255,255,0.1); color: var(--hdr-fg);
+  border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius);
+  padding: 4px 10px; font-size: 12px; cursor: pointer;
+  transition: background .15s;
+}
+.header button:hover, .header select:hover { background: rgba(255,255,255,0.2); }
+.header select option { background: var(--hdr-bg); color: var(--hdr-fg); }
+
+/* ── Main Content ── */
+.main {
+  flex: 1; display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px; background: var(--panel-border);
+  overflow: hidden;
+}
+.panel {
+  background: var(--panel-bg); display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.panel-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-bottom: 1px solid var(--panel-border);
+  background: var(--body-bg); min-height: 44px;
+}
+.panel-header h2 { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.panel-header .count {
+  font-size: 11px; color: var(--text-muted); background: var(--grey-bg);
+  padding: 2px 7px; border-radius: 10px;
+}
+.panel-body { flex: 1; overflow-y: auto; padding: 10px; }
+
+/* ── Search Input ── */
+.search-wrap {
+  flex: 1; max-width: 240px; position: relative;
+}
+.search-wrap input {
+  width: 100%; padding: 5px 8px 5px 28px;
+  border: 1px solid var(--panel-border); border-radius: var(--radius);
+  font-size: 12px; background: var(--panel-bg);
+}
+.search-wrap input:focus { outline: none; border-color: var(--accent); }
+.search-wrap::before {
+  content: "\1F50D"; position: absolute; left: 8px; top: 50%;
+  transform: translateY(-50%); font-size: 12px; pointer-events: none;
+}
+
+/* ── File Cards ── */
+.file-card {
+  border: 1px solid var(--panel-border); border-radius: var(--radius);
+  padding: 10px 12px; margin-bottom: 8px; background: var(--panel-bg);
+  transition: border-color .15s, background .15s;
+}
+.file-card.state-pending   { border-left: 3px solid var(--grey); }
+.file-card.state-accepted  { border-left: 3px solid var(--green); background: var(--green-bg); }
+.file-card.state-overridden { border-left: 3px solid var(--blue); background: var(--blue-bg); }
+.file-card.state-skipped   { border-left: 3px solid var(--grey); opacity: 0.5; }
+.file-card.state-conflict  { border-left: 3px solid var(--amber); background: var(--amber-bg); }
+
+.file-card .fc-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.file-card .fc-name { font-weight: 600; font-size: 13px; word-break: break-all; flex: 1; }
+.file-card .fc-ext {
+  font-size: 11px; background: var(--grey-bg); border: 1px solid var(--grey-border);
+  padding: 1px 6px; border-radius: 3px; color: var(--text-muted);
+  text-transform: uppercase; flex-shrink: 0;
+}
+.file-card .fc-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+
+/* Suggestion badge */
+.file-card .fc-suggestion {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; margin-bottom: 6px; padding: 4px 8px;
+  background: var(--body-bg); border-radius: var(--radius);
+}
+.file-card .fc-suggestion .badge-label { color: var(--text-muted); }
+.file-card .fc-suggestion .badge-folder { font-weight: 500; flex: 1; word-break: break-all; }
+
+/* Confidence bar */
+.confidence-bar {
+  width: 60px; height: 6px; background: var(--grey-bg);
+  border-radius: 3px; overflow: hidden; flex-shrink: 0;
+}
+.confidence-bar .bar-fill { height: 100%; border-radius: 3px; transition: width .3s; }
+.confidence-bar .bar-fill.high   { background: var(--green); }
+.confidence-bar .bar-fill.medium { background: var(--amber); }
+.confidence-bar .bar-fill.low    { background: var(--red); }
+
+/* Rename field */
+.file-card .fc-rename {
+  display: flex; gap: 4px; margin-bottom: 8px;
+}
+.file-card .fc-rename label { font-size: 11px; color: var(--text-muted); align-self: center; white-space: nowrap; }
+.file-card .fc-rename input {
+  flex: 1; padding: 4px 6px; font-size: 12px;
+  border: 1px solid var(--panel-border); border-radius: var(--radius);
+}
+.file-card .fc-rename input:focus { outline: none; border-color: var(--accent); }
+.file-card .fc-rename input.valid { border-color: var(--green); }
+.file-card .fc-rename input.invalid { border-color: var(--red); }
+
+/* Card action buttons */
+.file-card .fc-actions { display: flex; gap: 6px; }
+.btn {
+  padding: 4px 10px; font-size: 12px; border-radius: var(--radius);
+  border: 1px solid transparent; cursor: pointer; font-weight: 500;
+  transition: background .15s, border-color .15s;
+}
+.btn-accept  { background: var(--green); color: #fff; }
+.btn-accept:hover { background: #16a34a; }
+.btn-override { background: var(--blue); color: #fff; }
+.btn-override:hover { background: var(--accent-hover); }
+.btn-skip    { background: var(--grey-bg); color: var(--text-muted); border-color: var(--grey-border); }
+.btn-skip:hover { background: #e2e8f0; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-secondary { background: var(--panel-bg); color: var(--text); border-color: var(--panel-border); }
+.btn-secondary:hover { background: var(--body-bg); }
+.btn-danger  { background: var(--red); color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Cabinet Tree ── */
+.tree-node { user-select: none; }
+.tree-row {
+  display: flex; align-items: center; gap: 4px;
+  padding: 4px 6px; border-radius: var(--radius);
+  cursor: pointer; font-size: 13px; transition: background .1s;
+}
+.tree-row:hover { background: var(--body-bg); }
+.tree-row.selected { background: var(--blue-bg); border: 1px solid var(--blue-border); }
+.tree-row .toggle {
+  width: 16px; text-align: center; font-size: 10px;
+  color: var(--text-muted); flex-shrink: 0;
+}
+.tree-row .folder-icon { flex-shrink: 0; font-size: 14px; }
+.tree-row .folder-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-row .folder-count { font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+.tree-children { display: none; }
+.tree-node.open > .tree-children { display: block; }
+
+/* Folder detail (below tree when folder selected) */
+.folder-detail {
+  margin-top: 10px; padding: 10px; border: 1px solid var(--panel-border);
+  border-radius: var(--radius); background: var(--body-bg); font-size: 12px;
+}
+.folder-detail h3 { font-size: 13px; margin-bottom: 6px; }
+.folder-detail .fd-row { margin-bottom: 4px; }
+.folder-detail .fd-label { color: var(--text-muted); }
+
+/* ── Action Bar ── */
+.action-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px; min-height: 44px;
+  border-top: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+}
+.action-bar .spacer { flex: 1; }
+.action-bar .stats {
+  font-size: 12px; color: var(--text-muted);
+  display: flex; gap: 14px;
+}
+.action-bar .stats .stat-item { white-space: nowrap; }
+.action-bar .stats .stat-val { font-weight: 600; color: var(--text); }
+
+/* ── Batch selector (offline) ── */
+.batch-selector {
+  display: flex; gap: 6px; align-items: center;
+  padding: 8px 14px; border-bottom: 1px solid var(--panel-border);
+  background: var(--body-bg); font-size: 12px;
+}
+.batch-selector label { color: var(--text-muted); white-space: nowrap; }
+.batch-selector input {
+  flex: 1; padding: 4px 6px; font-size: 12px;
+  border: 1px solid var(--panel-border); border-radius: var(--radius);
+}
+.batch-selector input:focus { outline: none; border-color: var(--accent); }
+
+/* Verification status icons */
+.verify-icon { font-size: 14px; flex-shrink: 0; }
+.verify-icon.pass { color: var(--green); }
+.verify-icon.fail { color: var(--red); }
+.verify-icon.pending { color: var(--grey); }
+
+/* ── Settings Overlay ── */
+.overlay-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  display: none; z-index: 100; align-items: center; justify-content: center;
+}
+.overlay-backdrop.visible { display: flex; }
+.overlay {
+  background: var(--panel-bg); border-radius: 10px;
+  width: 560px; max-width: 95vw; max-height: 85vh;
+  box-shadow: var(--shadow-lg); display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.overlay-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid var(--panel-border);
+}
+.overlay-header h2 { font-size: 15px; }
+.overlay-header button {
+  background: none; border: none; font-size: 18px;
+  cursor: pointer; color: var(--text-muted); padding: 2px 6px;
+}
+.overlay-header button:hover { color: var(--text); }
+.overlay-body { flex: 1; overflow-y: auto; padding: 18px; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+.form-group input, .form-group textarea {
+  width: 100%; padding: 6px 8px; font-size: 13px;
+  border: 1px solid var(--panel-border); border-radius: var(--radius);
+  font-family: var(--font);
+}
+.form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--accent); }
+.form-group textarea { min-height: 120px; resize: vertical; font-family: monospace; font-size: 12px; }
+.form-group .validation {
+  font-size: 11px; margin-top: 3px;
+}
+.form-group .validation.ok { color: var(--green); }
+.form-group .validation.err { color: var(--red); }
+.overlay-footer {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 12px 18px; border-top: 1px solid var(--panel-border);
+}
+
+/* ── Empty / Loading / Error States ── */
+.empty-state {
+  text-align: center; padding: 40px 20px; color: var(--text-muted);
+}
+.empty-state .es-icon { font-size: 32px; margin-bottom: 10px; }
+.empty-state .es-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+.empty-state .es-desc { font-size: 12px; }
+.loading-spinner {
+  display: inline-block; width: 18px; height: 18px;
+  border: 2px solid var(--grey-bg); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Override destination selector */
+.fc-override-select {
+  margin-bottom: 8px;
+}
+.fc-override-select select {
+  width: 100%; padding: 4px 6px; font-size: 12px;
+  border: 1px solid var(--panel-border); border-radius: var(--radius);
+}
+
+/* ── Toast notification ── */
+.toast-container {
+  position: fixed; bottom: 60px; right: 16px; z-index: 200;
+  display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+}
+.toast {
+  background: var(--hdr-bg); color: var(--hdr-fg); padding: 8px 14px;
+  border-radius: var(--radius); font-size: 12px; box-shadow: var(--shadow-lg);
+  opacity: 0; transform: translateY(8px);
+  animation: toastin .25s ease forwards;
+  pointer-events: auto;
+}
+.toast.removing { animation: toastout .25s ease forwards; }
+@keyframes toastin { to { opacity:1; transform:translateY(0); } }
+@keyframes toastout { to { opacity:0; transform:translateY(8px); } }
+.toast.toast-error { background: var(--red); }
+
+/* ── Scrollbar styling ── */
+.panel-body::-webkit-scrollbar { width: 6px; }
+.panel-body::-webkit-scrollbar-track { background: transparent; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--grey); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Header -->
+  <div class="header">
+    <span class="status-dot detecting" id="statusDot" title="Detecting environment..."></span>
+    <span class="title">Transfer Gate v2</span>
+    <span class="cabinet-info" id="cabinetInfo">Cabinet: detecting...</span>
+    <span class="spacer"></span>
+    <button id="btnConfig" title="Settings">&#9881; Config</button>
+    <select id="modeSelect" title="Switch mode">
+      <option value="auto">Auto-detect</option>
+      <option value="online">Online</option>
+      <option value="offline">Offline</option>
+    </select>
+  </div>
+
+  <!-- Main Content — populated by JS based on mode -->
+  <div class="main" id="mainContent"></div>
+
+  <!-- Action Bar -->
+  <div class="action-bar" id="actionBar"></div>
+</div>
+
+<!-- Settings Overlay -->
+<div class="overlay-backdrop" id="settingsOverlay">
+  <div class="overlay">
+    <div class="overlay-header">
+      <h2>Settings</h2>
+      <button id="settingsClose" title="Close">&times;</button>
+    </div>
+    <div class="overlay-body" id="settingsBody"></div>
+    <div class="overlay-footer">
+      <button class="btn btn-secondary" id="settingsCancel">Cancel</button>
+      <button class="btn btn-primary" id="settingsSave">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   Transfer Gate v2 — Portable HTML UI
+   Self-contained. No external dependencies.
+   ══════════════════════════════════════════════════════════════ */
+
+(function () {
+  "use strict";
+
+  /* ── State ── */
+  var state = {
+    mode: null,          // "online" | "offline"
+    detecting: true,
+    config: {
+      sourcePath: "",
+      sortedPath: "",
+      cabinetRoot: "",
+      omlxEndpoint: "http://localhost:8000/v1",
+      mediaFileNamingRule: "{date} {title}",
+      serverPort: 8080
+    },
+    files: [],           // online: unsorted files
+    cabinet: [],         // folder tree array
+    rules: {},           // structure rules
+    classifications: {}, // filename -> classification obj
+    decisions: {},       // filename -> {state, renamed, destination, conflict_policy}
+    batchFiles: [],      // offline: batch file entries
+    batchPath: "",       // offline: current batch dir
+    batchVerified: false,
+    batches: [],         // online: previous batches
+    selectedFolder: null,
+    treeFilter: "",
+    fileFilter: "",
+    treeExpanded: {}     // path -> bool
+  };
+
+  /* ── DOM refs ── */
+  var $statusDot = document.getElementById("statusDot");
+  var $cabinetInfo = document.getElementById("cabinetInfo");
+  var $mainContent = document.getElementById("mainContent");
+  var $actionBar = document.getElementById("actionBar");
+  var $modeSelect = document.getElementById("modeSelect");
+  var $btnConfig = document.getElementById("btnConfig");
+  var $settingsOverlay = document.getElementById("settingsOverlay");
+  var $settingsBody = document.getElementById("settingsBody");
+  var $settingsClose = document.getElementById("settingsClose");
+  var $settingsCancel = document.getElementById("settingsCancel");
+  var $settingsSave = document.getElementById("settingsSave");
+  var $toastContainer = document.getElementById("toastContainer");
+
+  /* ── Utility: API fetch wrapper ── */
+  function apiFetch(path, opts) {
+    opts = opts || {};
+    var url = path;
+    var options = {
+      method: opts.method || "GET",
+      headers: { "Content-Type": "application/json" }
+    };
+    if (opts.body) options.body = JSON.stringify(opts.body);
+    return fetch(url, options).then(function (r) {
+      if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || r.statusText); });
+      return r.json();
+    });
+  }
+
+  /* ── Utility: format bytes ── */
+  function fmtBytes(b) {
+    if (b < 1024) return b + " B";
+    if (b < 1048576) return (b / 1024).toFixed(1) + " KB";
+    if (b < 1073741824) return (b / 1048576).toFixed(1) + " MB";
+    return (b / 1073741824).toFixed(2) + " GB";
+  }
+
+  /* ── Utility: format date ── */
+  function fmtDate(iso) {
+    if (!iso) return "";
+    var d = new Date(iso);
+    return d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+  }
+
+  /* ── Utility: escape HTML ── */
+  function esc(s) {
+    var el = document.createElement("span");
+    el.textContent = s;
+    return el.innerHTML;
+  }
+
+  /* ── Utility: rename validation (YYYY-MM-DD Title (version).ext) ── */
+  function isValidRename(name) {
+    return /^\d{4}-\d{2}-\d{2}\s+.+\s*\(.*\)\.\S+$/.test(name);
+  }
+
+  /* ── Toast notifications ── */
+  function toast(msg, isError) {
+    var el = document.createElement("div");
+    el.className = "toast" + (isError ? " toast-error" : "");
+    el.textContent = msg;
+    $toastContainer.appendChild(el);
+    setTimeout(function () {
+      el.classList.add("removing");
+      setTimeout(function () { el.remove(); }, 250);
+    }, 3000);
+  }
+
+  /* ══════════════════════════════════════
+     Environment Detection
+     ══════════════════════════════════════ */
+  function detectEnvironment() {
+    state.detecting = true;
+    renderHeader();
+
+    var controller = new AbortController();
+    var timer = setTimeout(function () { controller.abort(); }, 2000);
+
+    fetch("http://localhost:8000/v1/models", { signal: controller.signal })
+      .then(function (r) {
+        clearTimeout(timer);
+        if (r.ok) {
+          setMode("online");
+        } else {
+          setMode("offline");
+        }
+      })
+      .catch(function () {
+        clearTimeout(timer);
+        setMode("offline");
+      });
+  }
+
+  function setMode(m) {
+    state.mode = m;
+    state.detecting = false;
+    renderHeader();
+    if (m === "online") {
+      initOnline();
+    } else {
+      initOffline();
+    }
+  }
+
+  /* ══════════════════════════════════════
+     Header Rendering
+     ══════════════════════════════════════ */
+  function renderHeader() {
+    $statusDot.className = "status-dot " + (state.detecting ? "detecting" : state.mode);
+    $statusDot.title = state.detecting ? "Detecting..." : (state.mode === "online" ? "Online Mode" : "Offline Mode");
+
+    var pathParts = [];
+    if (state.config.sourcePath) {
+      pathParts.push('Src: <span class="check">&#10003;</span>');
+    }
+    if (state.config.sortedPath) {
+      pathParts.push('Out: <span class="check">&#10003;</span>');
+    }
+    if (state.config.cabinetRoot) {
+      pathParts.push('Cab: <span class="check">&#10003;</span>');
+    }
+    if (pathParts.length === 3) {
+      $cabinetInfo.innerHTML = pathParts.join(" &nbsp;|&nbsp; ");
+    } else if (state.detecting) {
+      $cabinetInfo.textContent = "Paths: detecting...";
+    } else {
+      var missing = 3 - pathParts.length;
+      $cabinetInfo.innerHTML = (pathParts.length > 0 ? pathParts.join(" | ") + " &mdash; " : "") +
+        '<span style="color:var(--amber)">' + missing + ' path(s) not configured</span>';
+    }
+  }
+
+  /* ══════════════════════════════════════
+     ONLINE MODE — Sort & Stage
+     ══════════════════════════════════════ */
+  function initOnline() {
+    renderOnlineLayout();
+    loadConfig();
+    loadFiles();
+    loadCabinet();
+  }
+
+  function pathsConfigured() {
+    return state.config.sourcePath && state.config.sortedPath && state.config.cabinetRoot;
+  }
+
+  function renderSetupBanner() {
+    var existing = document.getElementById("setupBanner");
+    if (existing) existing.remove();
+    if (pathsConfigured()) return;
+    var missing = [];
+    if (!state.config.sourcePath) missing.push("Source Files");
+    if (!state.config.sortedPath) missing.push("Sorted Files");
+    if (!state.config.cabinetRoot) missing.push("Cabinet");
+    var banner = document.createElement("div");
+    banner.id = "setupBanner";
+    banner.style.cssText = "padding:14px 18px;background:var(--amber-bg);border-bottom:2px solid var(--amber-border);display:flex;align-items:center;gap:12px;font-size:13px;";
+    banner.innerHTML = '<span style="font-size:18px">&#9888;</span>' +
+      '<span><strong>Setup required:</strong> Configure ' + esc(missing.join(", ")) +
+      ' path' + (missing.length > 1 ? 's' : '') + ' before sorting.</span>' +
+      '<button class="btn btn-primary" id="setupOpenSettings" style="margin-left:auto">Open Settings</button>';
+    $mainContent.parentNode.insertBefore(banner, $mainContent);
+    document.getElementById("setupOpenSettings").addEventListener("click", openSettings);
+  }
+
+  function loadConfig() {
+    apiFetch("/api/config")
+      .then(function (d) {
+        Object.assign(state.config, d);
+        renderHeader();
+        renderSetupBanner();
+      })
+      .catch(function () { renderSetupBanner(); });
+  }
+
+  function loadFiles() {
+    apiFetch("/api/files")
+      .then(function (d) {
+        state.files = d.files || [];
+        renderFileList();
+        renderActionBar();
+      })
+      .catch(function (e) {
+        state.files = [];
+        renderFileList();
+        toast("Failed to load files: " + e.message, true);
+      });
+  }
+
+  function loadCabinet() {
+    apiFetch("/api/cabinet")
+      .then(function (d) {
+        state.cabinet = d.tree || [];
+        renderCabinetTree();
+      })
+      .catch(function () {
+        state.cabinet = [];
+        renderCabinetTree();
+      });
+
+    apiFetch("/api/cabinet/rules")
+      .then(function (d) { state.rules = d || {}; })
+      .catch(function () { state.rules = {}; });
+  }
+
+  function renderOnlineLayout() {
+    $mainContent.innerHTML =
+      '<div class="panel" id="panelFiles">' +
+        '<div class="panel-header">' +
+          '<h2>Unsorted Files</h2>' +
+          '<span class="count" id="fileCount">0</span>' +
+          '<div class="search-wrap"><input type="text" placeholder="Filter files..." id="fileSearch"></div>' +
+        '</div>' +
+        '<div class="panel-body" id="fileListBody"></div>' +
+      '</div>' +
+      '<div class="panel" id="panelCabinet">' +
+        '<div class="panel-header">' +
+          '<h2>Cabinet Tree</h2>' +
+          '<span class="count" id="treeCount">0</span>' +
+          '<div class="search-wrap"><input type="text" placeholder="Search folders..." id="treeSearch"></div>' +
+        '</div>' +
+        '<div class="panel-body" id="cabinetTreeBody"></div>' +
+      '</div>';
+
+    document.getElementById("fileSearch").addEventListener("input", function (e) {
+      state.fileFilter = e.target.value.toLowerCase();
+      renderFileList();
+    });
+    document.getElementById("treeSearch").addEventListener("input", function (e) {
+      state.treeFilter = e.target.value.toLowerCase();
+      renderCabinetTree();
+    });
+  }
+
+  function renderFileList() {
+    var container = document.getElementById("fileListBody");
+    var countEl = document.getElementById("fileCount");
+    if (!container) return;
+
+    var filtered = state.files.filter(function (f) {
+      return !state.fileFilter || f.name.toLowerCase().indexOf(state.fileFilter) !== -1;
+    });
+
+    countEl.textContent = filtered.length + (filtered.length !== state.files.length ? "/" + state.files.length : "");
+
+    if (filtered.length === 0) {
+      container.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="es-icon">&#128194;</div>' +
+          '<div class="es-title">' + (state.files.length === 0 ? "No unsorted files" : "No matches") + '</div>' +
+          '<div class="es-desc">' + (state.files.length === 0 ? "The inbox is empty." : "Try a different filter.") + '</div>' +
+        '</div>';
+      return;
+    }
+
+    var html = "";
+    for (var i = 0; i < filtered.length; i++) {
+      html += buildFileCard(filtered[i]);
+    }
+    container.innerHTML = html;
+    attachFileCardEvents(container);
+  }
+
+  function buildFileCard(f) {
+    var dec = state.decisions[f.name] || {};
+    var cls = state.classifications[f.name];
+    var cardState = dec.state || "pending";
+    var renamed = dec.renamed || (cls && cls.suggested_rename) || f.name;
+    var renameValid = isValidRename(renamed);
+
+    var html = '<div class="file-card state-' + cardState + '" data-filename="' + esc(f.name) + '">';
+    html += '<div class="fc-top">';
+    html += '<span class="fc-name">' + esc(f.name) + '</span>';
+    html += '<span class="fc-ext">' + esc(f.ext || "?") + '</span>';
+    html += '</div>';
+
+    html += '<div class="fc-meta">' + fmtBytes(f.size) + ' &middot; ' + fmtDate(f.mtime) + '</div>';
+
+    // AI suggestion
+    if (cls) {
+      var conf = cls.confidence || 0;
+      var barClass = conf >= 0.7 ? "high" : (conf >= 0.5 ? "medium" : "low");
+      html += '<div class="fc-suggestion">';
+      html += '<span class="badge-label">AI:</span>';
+      html += '<span class="badge-folder">' + esc(cls.suggested_folder || "No suggestion") + '</span>';
+      html += '<div class="confidence-bar"><div class="bar-fill ' + barClass + '" style="width:' + (conf * 100) + '%"></div></div>';
+      html += '<span style="font-size:11px;color:var(--text-muted)">' + (conf * 100).toFixed(0) + '%</span>';
+      html += '</div>';
+      if (cls.reasoning) {
+        html += '<div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;padding:0 8px">' + esc(cls.reasoning) + '</div>';
+      }
+    }
+
+    // Rename field
+    html += '<div class="fc-rename">';
+    html += '<label>Rename:</label>';
+    html += '<input type="text" class="rename-input ' + (renameValid ? "valid" : "invalid") + '" value="' + esc(renamed) + '" data-filename="' + esc(f.name) + '" placeholder="YYYY-MM-DD Title (version).ext">';
+    html += '</div>';
+
+    // Override destination selector
+    if (state.cabinet.length > 0) {
+      var currentDest = dec.destination || (cls && cls.suggested_folder) || "";
+      html += '<div class="fc-override-select">';
+      html += '<select class="dest-select" data-filename="' + esc(f.name) + '">';
+      html += '<option value="">-- Select destination --</option>';
+      for (var j = 0; j < state.cabinet.length; j++) {
+        var p = state.cabinet[j].path;
+        var indent = "";
+        for (var k = 0; k < state.cabinet[j].depth; k++) indent += "  ";
+        var sel = (p === currentDest) ? " selected" : "";
+        html += '<option value="' + esc(p) + '"' + sel + '>' + indent + esc(p.split("/").pop()) + '</option>';
+      }
+      html += '</select>';
+      html += '</div>';
+    }
+
+    // Action buttons
+    html += '<div class="fc-actions">';
+    if (cardState !== "accepted") {
+      html += '<button class="btn btn-accept" data-action="accept" data-filename="' + esc(f.name) + '">Accept</button>';
+    }
+    if (cardState !== "overridden") {
+      html += '<button class="btn btn-override" data-action="override" data-filename="' + esc(f.name) + '">Override</button>';
+    }
+    if (cardState !== "skipped") {
+      html += '<button class="btn btn-skip" data-action="skip" data-filename="' + esc(f.name) + '">Skip</button>';
+    }
+    if (cardState !== "pending") {
+      html += '<button class="btn btn-secondary" data-action="reset" data-filename="' + esc(f.name) + '">Reset</button>';
+    }
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function attachFileCardEvents(container) {
+    // Rename inputs
+    var inputs = container.querySelectorAll(".rename-input");
+    for (var i = 0; i < inputs.length; i++) {
+      inputs[i].addEventListener("input", function (e) {
+        var fn = e.target.getAttribute("data-filename");
+        ensureDecision(fn);
+        state.decisions[fn].renamed = e.target.value;
+        e.target.className = "rename-input " + (isValidRename(e.target.value) ? "valid" : "invalid");
+        renderActionBar();
+      });
+    }
+
+    // Destination selects
+    var selects = container.querySelectorAll(".dest-select");
+    for (var j = 0; j < selects.length; j++) {
+      selects[j].addEventListener("change", function (e) {
+        var fn = e.target.getAttribute("data-filename");
+        ensureDecision(fn);
+        state.decisions[fn].destination = e.target.value;
+      });
+    }
+
+    // Action buttons
+    var buttons = container.querySelectorAll(".fc-actions .btn");
+    for (var k = 0; k < buttons.length; k++) {
+      buttons[k].addEventListener("click", function (e) {
+        var action = e.target.getAttribute("data-action");
+        var fn = e.target.getAttribute("data-filename");
+        handleFileAction(fn, action);
+      });
+    }
+  }
+
+  function ensureDecision(filename) {
+    if (!state.decisions[filename]) {
+      var cls = state.classifications[filename];
+      state.decisions[filename] = {
+        state: "pending",
+        renamed: (cls && cls.suggested_rename) || filename,
+        destination: (cls && cls.suggested_folder) || "",
+        conflict_policy: "skip"
+      };
+    }
+  }
+
+  function handleFileAction(filename, action) {
+    ensureDecision(filename);
+    var dec = state.decisions[filename];
+
+    if (action === "accept") {
+      var cls = state.classifications[filename];
+      if (cls && cls.suggested_folder) {
+        dec.destination = cls.suggested_folder;
+      }
+      dec.state = "accepted";
+    } else if (action === "override") {
+      dec.state = "overridden";
+    } else if (action === "skip") {
+      dec.state = "skipped";
+    } else if (action === "reset") {
+      dec.state = "pending";
+    }
+
+    renderFileList();
+    renderActionBar();
+  }
+
+  /* ── Cabinet Tree ── */
+  function renderCabinetTree() {
+    var container = document.getElementById("cabinetTreeBody");
+    var countEl = document.getElementById("treeCount");
+    if (!container) return;
+
+    countEl.textContent = state.cabinet.length + " folders";
+
+    if (state.cabinet.length === 0) {
+      container.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="es-icon">&#128193;</div>' +
+          '<div class="es-title">No Cabinet tree loaded</div>' +
+          '<div class="es-desc">The Cabinet manifest is missing or empty.</div>' +
+        '</div>';
+      return;
+    }
+
+    var tree = buildTreeStructure(state.cabinet);
+    var html = renderTreeNodes(tree, 0);
+
+    // Folder detail
+    if (state.selectedFolder) {
+      var folder = state.cabinet.find(function (f) { return f.path === state.selectedFolder; });
+      if (folder) {
+        html += '<div class="folder-detail">';
+        html += '<h3>' + esc(state.selectedFolder) + '</h3>';
+        html += '<div class="fd-row"><span class="fd-label">Files:</span> ' + (folder.file_count || 0) + '</div>';
+        html += '<div class="fd-row"><span class="fd-label">Size:</span> ' + fmtBytes(folder.bytes || 0) + '</div>';
+        var rule = getFolderRule(state.selectedFolder);
+        if (rule) {
+          if (rule.description) html += '<div class="fd-row"><span class="fd-label">Description:</span> ' + esc(rule.description) + '</div>';
+          if (rule.accepted_types) html += '<div class="fd-row"><span class="fd-label">Types:</span> ' + esc(Array.isArray(rule.accepted_types) ? rule.accepted_types.join(", ") : String(rule.accepted_types)) + '</div>';
+          if (rule.naming) html += '<div class="fd-row"><span class="fd-label">Naming:</span> ' + esc(rule.naming) + '</div>';
+        }
+        html += '</div>';
+      }
+    }
+
+    container.innerHTML = html;
+    attachTreeEvents(container);
+  }
+
+  function buildTreeStructure(flat) {
+    var roots = [];
+    var map = {};
+
+    for (var i = 0; i < flat.length; i++) {
+      var f = flat[i];
+      var parts = f.path.split("/");
+      var name = parts[parts.length - 1];
+      var parentPath = parts.slice(0, -1).join("/");
+
+      var node = {
+        name: name,
+        path: f.path,
+        depth: f.depth,
+        file_count: f.file_count,
+        bytes: f.bytes,
+        children: []
+      };
+      map[f.path] = node;
+
+      if (parentPath && map[parentPath]) {
+        map[parentPath].children.push(node);
+      } else {
+        roots.push(node);
+      }
+    }
+    return roots;
+  }
+
+  function renderTreeNodes(nodes, depth) {
+    var html = "";
+    for (var i = 0; i < nodes.length; i++) {
+      var n = nodes[i];
+      // Filter
+      if (state.treeFilter) {
+        var matchSelf = n.path.toLowerCase().indexOf(state.treeFilter) !== -1;
+        var matchChild = hasMatchingChild(n);
+        if (!matchSelf && !matchChild) continue;
+      }
+
+      var isOpen = state.treeExpanded[n.path] || (state.treeFilter && hasMatchingChild(n));
+      var hasChildren = n.children.length > 0;
+      var isSelected = state.selectedFolder === n.path;
+
+      html += '<div class="tree-node' + (isOpen ? ' open' : '') + '" data-path="' + esc(n.path) + '">';
+      html += '<div class="tree-row' + (isSelected ? ' selected' : '') + '" style="padding-left:' + (depth * 16 + 6) + 'px" data-path="' + esc(n.path) + '">';
+      html += '<span class="toggle">' + (hasChildren ? (isOpen ? "&#9660;" : "&#9654;") : "&nbsp;") + '</span>';
+      html += '<span class="folder-icon">&#128193;</span>';
+      html += '<span class="folder-name">' + esc(n.name) + '</span>';
+      if (n.file_count > 0) {
+        html += '<span class="folder-count">' + n.file_count + '</span>';
+      }
+      html += '</div>';
+
+      if (hasChildren) {
+        html += '<div class="tree-children">';
+        html += renderTreeNodes(n.children, depth + 1);
+        html += '</div>';
+      }
+
+      html += '</div>';
+    }
+    return html;
+  }
+
+  function hasMatchingChild(node) {
+    for (var i = 0; i < node.children.length; i++) {
+      if (node.children[i].path.toLowerCase().indexOf(state.treeFilter) !== -1) return true;
+      if (hasMatchingChild(node.children[i])) return true;
+    }
+    return false;
+  }
+
+  function getFolderRule(path) {
+    if (!state.rules || !state.rules.folders) return null;
+    var parts = path.replace(/\\/g, "/").split("/");
+    var current = state.rules.folders;
+    for (var i = 0; i < parts.length; i++) {
+      if (current[parts[i]]) {
+        current = current[parts[i]];
+      } else if (current.children && current.children[parts[i]]) {
+        current = current.children[parts[i]];
+      } else {
+        return null;
+      }
+    }
+    return (typeof current === "object") ? current : null;
+  }
+
+  function attachTreeEvents(container) {
+    var rows = container.querySelectorAll(".tree-row");
+    for (var i = 0; i < rows.length; i++) {
+      rows[i].addEventListener("click", function (e) {
+        var path = e.currentTarget.getAttribute("data-path");
+        var nodeEl = e.currentTarget.parentElement;
+        var toggle = e.target.closest(".toggle");
+
+        if (toggle || nodeEl.classList.contains("open")) {
+          if (toggle) {
+            state.treeExpanded[path] = !state.treeExpanded[path];
+          } else {
+            state.selectedFolder = path;
+            state.treeExpanded[path] = !state.treeExpanded[path];
+          }
+        } else {
+          state.treeExpanded[path] = true;
+          state.selectedFolder = path;
+        }
+
+        renderCabinetTree();
+      });
+    }
+  }
+
+  /* ── Action Bar (Online) ── */
+  function renderActionBar() {
+    if (state.mode === "online") {
+      renderOnlineActionBar();
+    } else {
+      renderOfflineActionBar();
+    }
+  }
+
+  function renderOnlineActionBar() {
+    var total = state.files.length;
+    var accepted = 0, overridden = 0, skipped = 0, pending = 0;
+    for (var fn in state.decisions) {
+      var s = state.decisions[fn].state;
+      if (s === "accepted") accepted++;
+      else if (s === "overridden") overridden++;
+      else if (s === "skipped") skipped++;
+    }
+    pending = total - accepted - overridden - skipped;
+
+    var readyToStage = 0;
+    for (var fn2 in state.decisions) {
+      var d = state.decisions[fn2];
+      if ((d.state === "accepted" || d.state === "overridden") && d.destination && isValidRename(d.renamed)) {
+        readyToStage++;
+      }
+    }
+
+    $actionBar.innerHTML =
+      '<button class="btn btn-primary" id="btnClassify"' + (total === 0 ? ' disabled' : '') + '>Classify All</button>' +
+      '<button class="btn btn-primary" id="btnStage"' + (readyToStage === 0 ? ' disabled' : '') + '>Stage Batch (' + readyToStage + ')</button>' +
+      '<span class="spacer"></span>' +
+      '<div class="stats">' +
+        '<span class="stat-item"><span class="stat-val">' + total + '</span> total</span>' +
+        '<span class="stat-item" style="color:var(--grey)"><span class="stat-val">' + pending + '</span> pending</span>' +
+        '<span class="stat-item" style="color:var(--green)"><span class="stat-val">' + accepted + '</span> accepted</span>' +
+        '<span class="stat-item" style="color:var(--blue)"><span class="stat-val">' + overridden + '</span> overridden</span>' +
+        '<span class="stat-item" style="color:var(--grey)"><span class="stat-val">' + skipped + '</span> skipped</span>' +
+      '</div>';
+
+    document.getElementById("btnClassify").addEventListener("click", classifyAll);
+    document.getElementById("btnStage").addEventListener("click", stageBatch);
+  }
+
+  function classifyAll() {
+    var btn = document.getElementById("btnClassify");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span> Classifying...';
+
+    apiFetch("/api/classify", { method: "POST", body: { files: state.files } })
+      .then(function (d) {
+        var method = d.method || "unknown";
+        var results = d.classifications || [];
+        for (var i = 0; i < results.length; i++) {
+          var c = results[i];
+          state.classifications[c.filename] = c;
+          ensureDecision(c.filename);
+          if (c.suggested_folder) {
+            state.decisions[c.filename].destination = c.suggested_folder;
+          }
+        }
+        return requestRenamePreviews().then(function () {
+          toast("Classification complete (" + method + ")");
+          renderFileList();
+          renderActionBar();
+        });
+      })
+      .catch(function (e) {
+        toast("Classification failed: " + e.message, true);
+        renderActionBar();
+      });
+  }
+
+  function requestRenamePreviews() {
+    var promises = [];
+    for (var i = 0; i < state.files.length; i++) {
+      (function (f) {
+        promises.push(
+          apiFetch("/api/rename-preview", { method: "POST", body: { filename: f.name } })
+            .then(function (d) {
+              ensureDecision(f.name);
+              if (!state.decisions[f.name].renamed || state.decisions[f.name].renamed === f.name) {
+                state.decisions[f.name].renamed = d.renamed;
+              }
+              if (state.classifications[f.name]) {
+                state.classifications[f.name].suggested_rename = d.renamed;
+              }
+            })
+            .catch(function () { /* rename preview failed, leave as-is */ })
+        );
+      })(state.files[i]);
+    }
+    return Promise.all(promises);
+  }
+
+  function stageBatch() {
+    var decisions = [];
+    for (var fn in state.decisions) {
+      var d = state.decisions[fn];
+      if ((d.state === "accepted" || d.state === "overridden") && d.destination && isValidRename(d.renamed)) {
+        decisions.push({
+          source: fn,
+          renamed: d.renamed,
+          destination: d.destination,
+          conflict_policy: d.conflict_policy || "skip",
+          classification: state.classifications[fn] || {}
+        });
+      }
+    }
+
+    if (decisions.length === 0) {
+      toast("No files ready to stage", true);
+      return;
+    }
+
+    var btn = document.getElementById("btnStage");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span> Staging...';
+
+    apiFetch("/api/stage", { method: "POST", body: { decisions: decisions } })
+      .then(function (d) {
+        toast("Batch staged: " + d.batch_id + " (" + d.files + " files, " + fmtBytes(d.bytes) + ")");
+        // Clear staged files from decisions
+        for (var i = 0; i < decisions.length; i++) {
+          delete state.decisions[decisions[i].source];
+          delete state.classifications[decisions[i].source];
+        }
+        loadFiles();
+      })
+      .catch(function (e) {
+        toast("Staging failed: " + e.message, true);
+        renderActionBar();
+      });
+  }
+
+  /* ══════════════════════════════════════
+     OFFLINE MODE — Verify & Place
+     ══════════════════════════════════════ */
+  function initOffline() {
+    renderOfflineLayout();
+    loadOfflineConfig();
+    loadOfflineCabinet();
+  }
+
+  function loadOfflineConfig() {
+    apiFetch("/api/config")
+      .then(function (d) {
+        Object.assign(state.config, d);
+        renderHeader();
+      })
+      .catch(function () { /* offline file:// — no config endpoint */ });
+  }
+
+  function loadOfflineCabinet() {
+    apiFetch("/api/tree")
+      .then(function (d) {
+        state.cabinet = d.tree || [];
+        renderOfflineCabinetTree();
+      })
+      .catch(function () {
+        // Try online endpoint as fallback
+        apiFetch("/api/cabinet")
+          .then(function (d) {
+            state.cabinet = d.tree || [];
+            renderOfflineCabinetTree();
+          })
+          .catch(function () {
+            state.cabinet = [];
+            renderOfflineCabinetTree();
+          });
+      });
+  }
+
+  function renderOfflineLayout() {
+    $mainContent.innerHTML =
+      '<div class="panel" id="panelBatch">' +
+        '<div class="panel-header">' +
+          '<h2>Batch Files</h2>' +
+          '<span class="count" id="batchCount">0</span>' +
+          '<div class="search-wrap"><input type="text" placeholder="Filter files..." id="batchFileSearch"></div>' +
+        '</div>' +
+        '<div class="batch-selector">' +
+          '<label>Batch path:</label>' +
+          '<input type="text" id="batchPathInput" placeholder="Enter batch directory path...">' +
+          '<button class="btn btn-secondary" id="btnLoadBatch">Load</button>' +
+        '</div>' +
+        '<div class="panel-body" id="batchListBody"></div>' +
+      '</div>' +
+      '<div class="panel" id="panelPlacement">' +
+        '<div class="panel-header">' +
+          '<h2>Cabinet Tree</h2>' +
+          '<span class="count" id="offlineTreeCount">0</span>' +
+          '<div class="search-wrap"><input type="text" placeholder="Search folders..." id="offlineTreeSearch"></div>' +
+        '</div>' +
+        '<div class="panel-body" id="offlineCabinetBody"></div>' +
+      '</div>';
+
+    document.getElementById("batchPathInput").addEventListener("keypress", function (e) {
+      if (e.key === "Enter") loadBatch();
+    });
+    document.getElementById("btnLoadBatch").addEventListener("click", loadBatch);
+    document.getElementById("batchFileSearch").addEventListener("input", function (e) {
+      state.fileFilter = e.target.value.toLowerCase();
+      renderBatchFileList();
+    });
+    document.getElementById("offlineTreeSearch").addEventListener("input", function (e) {
+      state.treeFilter = e.target.value.toLowerCase();
+      renderOfflineCabinetTree();
+    });
+
+    renderBatchFileList();
+    renderActionBar();
+  }
+
+  function loadBatch() {
+    var pathInput = document.getElementById("batchPathInput");
+    var batchPath = pathInput.value.trim();
+    if (!batchPath) {
+      toast("Enter a batch path", true);
+      return;
+    }
+
+    state.batchPath = batchPath;
+    state.batchVerified = false;
+
+    apiFetch("/api/batch?path=" + encodeURIComponent(batchPath))
+      .then(function (d) {
+        state.batchFiles = (d.files || []).map(function (f) {
+          return Object.assign({ verify_status: f.sha256_ok ? "pass" : (f.sha256_ok === false ? "fail" : "pending") }, f);
+        });
+        state.batchVerified = d.verified || false;
+        renderBatchFileList();
+        renderActionBar();
+        if (state.batchVerified) toast("Batch loaded and verified");
+        else toast("Batch loaded — verification pending");
+      })
+      .catch(function (e) {
+        state.batchFiles = [];
+        renderBatchFileList();
+        renderActionBar();
+        toast("Failed to load batch: " + e.message, true);
+      });
+  }
+
+  function renderBatchFileList() {
+    var container = document.getElementById("batchListBody");
+    var countEl = document.getElementById("batchCount");
+    if (!container) return;
+
+    var filtered = state.batchFiles.filter(function (f) {
+      var name = f.path || f.name || "";
+      return !state.fileFilter || name.toLowerCase().indexOf(state.fileFilter) !== -1;
+    });
+
+    countEl.textContent = filtered.length + (filtered.length !== state.batchFiles.length ? "/" + state.batchFiles.length : "");
+
+    if (filtered.length === 0) {
+      container.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="es-icon">&#128230;</div>' +
+          '<div class="es-title">' + (state.batchFiles.length === 0 ? "No batch loaded" : "No matches") + '</div>' +
+          '<div class="es-desc">' + (state.batchFiles.length === 0 ? "Enter a batch path above and click Load." : "Try a different filter.") + '</div>' +
+        '</div>';
+      return;
+    }
+
+    var html = "";
+    for (var i = 0; i < filtered.length; i++) {
+      var f = filtered[i];
+      var name = f.path || f.name || "unknown";
+      var status = f.verify_status || "pending";
+      var statusIcon = status === "pass" ? "&#10003;" : (status === "fail" ? "&#10007;" : "&#9675;");
+      var statusClass = status;
+
+      html += '<div class="file-card state-' + (status === "pass" ? "accepted" : (status === "fail" ? "conflict" : "pending")) + '">';
+      html += '<div class="fc-top">';
+      html += '<span class="verify-icon ' + statusClass + '">' + statusIcon + '</span>';
+      html += '<span class="fc-name">' + esc(name) + '</span>';
+      if (f.size !== undefined) html += '<span class="fc-ext">' + fmtBytes(f.size) + '</span>';
+      html += '</div>';
+
+      html += '<div class="fc-meta">';
+      if (f.sha256) html += 'SHA-256: <code style="font-size:10px">' + esc(f.sha256.substring(0, 16)) + '...</code>';
+      if (f.destination) html += ' &rarr; ' + esc(f.destination);
+      html += '</div>';
+
+      if (status === "fail") {
+        html += '<div style="font-size:11px;color:var(--red);padding:4px 0">Hash mismatch — file may be corrupted</div>';
+      }
+
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+  }
+
+  function renderOfflineCabinetTree() {
+    var container = document.getElementById("offlineCabinetBody");
+    var countEl = document.getElementById("offlineTreeCount");
+    if (!container) return;
+
+    countEl.textContent = state.cabinet.length + " folders";
+
+    if (state.cabinet.length === 0) {
+      container.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="es-icon">&#128193;</div>' +
+          '<div class="es-title">No Cabinet tree</div>' +
+          '<div class="es-desc">Cabinet tree could not be loaded.</div>' +
+        '</div>';
+      return;
+    }
+
+    var tree = buildTreeStructure(state.cabinet);
+    var html = renderTreeNodes(tree, 0);
+
+    // Show placement preview
+    if (state.batchFiles.length > 0) {
+      html += '<div class="folder-detail"><h3>Placement Preview</h3>';
+      var destMap = {};
+      for (var i = 0; i < state.batchFiles.length; i++) {
+        var dest = state.batchFiles[i].destination || "unassigned";
+        if (!destMap[dest]) destMap[dest] = [];
+        destMap[dest].push(state.batchFiles[i].path || state.batchFiles[i].name || "?");
+      }
+      for (var d in destMap) {
+        html += '<div class="fd-row"><span class="fd-label">' + esc(d) + ':</span> ' + destMap[d].length + ' file(s)</div>';
+      }
+      html += '</div>';
+    }
+
+    container.innerHTML = html;
+    attachTreeEvents(container);
+  }
+
+  function renderOfflineActionBar() {
+    var total = state.batchFiles.length;
+    var passed = 0, failed = 0, pending = 0;
+    for (var i = 0; i < state.batchFiles.length; i++) {
+      var s = state.batchFiles[i].verify_status;
+      if (s === "pass") passed++;
+      else if (s === "fail") failed++;
+      else pending++;
+    }
+
+    var canPlace = total > 0 && failed === 0 && pending === 0;
+
+    $actionBar.innerHTML =
+      '<button class="btn btn-primary" id="btnVerify"' + (total === 0 ? ' disabled' : '') + '>Verify Batch</button>' +
+      '<button class="btn btn-primary" id="btnPlace"' + (!canPlace ? ' disabled' : '') + '>Place Files</button>' +
+      '<span class="spacer"></span>' +
+      '<div class="stats">' +
+        '<span class="stat-item"><span class="stat-val">' + total + '</span> total</span>' +
+        '<span class="stat-item" style="color:var(--green)"><span class="stat-val">' + passed + '</span> verified</span>' +
+        '<span class="stat-item" style="color:var(--red)"><span class="stat-val">' + failed + '</span> failed</span>' +
+        '<span class="stat-item" style="color:var(--grey)"><span class="stat-val">' + pending + '</span> pending</span>' +
+      '</div>';
+
+    var btnVerify = document.getElementById("btnVerify");
+    var btnPlace = document.getElementById("btnPlace");
+    if (btnVerify) btnVerify.addEventListener("click", verifyBatch);
+    if (btnPlace) btnPlace.addEventListener("click", placeFiles);
+  }
+
+  function verifyBatch() {
+    if (!state.batchPath) {
+      toast("Load a batch first", true);
+      return;
+    }
+
+    var btn = document.getElementById("btnVerify");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span> Verifying...';
+
+    apiFetch("/api/batch?path=" + encodeURIComponent(state.batchPath))
+      .then(function (d) {
+        state.batchFiles = (d.files || []).map(function (f) {
+          return Object.assign({ verify_status: f.sha256_ok ? "pass" : (f.sha256_ok === false ? "fail" : "pending") }, f);
+        });
+        state.batchVerified = d.verified || false;
+        var passed = state.batchFiles.filter(function (f) { return f.verify_status === "pass"; }).length;
+        var failed = state.batchFiles.filter(function (f) { return f.verify_status === "fail"; }).length;
+        toast("Verification: " + passed + " passed, " + failed + " failed");
+        renderBatchFileList();
+        renderActionBar();
+      })
+      .catch(function (e) {
+        toast("Verification failed: " + e.message, true);
+        renderActionBar();
+      });
+  }
+
+  function placeFiles() {
+    var btn = document.getElementById("btnPlace");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="loading-spinner"></span> Placing...';
+
+    apiFetch("/api/place", {
+      method: "POST",
+      body: { batch_path: state.batchPath }
+    })
+      .then(function (d) {
+        toast("Placement complete: " + (d.placed || 0) + " files placed");
+        state.batchFiles = [];
+        state.batchPath = "";
+        var pathInput = document.getElementById("batchPathInput");
+        if (pathInput) pathInput.value = "";
+        renderBatchFileList();
+        renderActionBar();
+      })
+      .catch(function (e) {
+        toast("Placement failed: " + e.message, true);
+        renderActionBar();
+      });
+  }
+
+  /* ══════════════════════════════════════
+     Settings Overlay
+     ══════════════════════════════════════ */
+  function openSettings() {
+    $settingsBody.innerHTML =
+      '<h3 style="margin-bottom:10px;font-size:14px;color:var(--text)">Paths</h3>' +
+      '<div class="form-group">' +
+        '<label>&#9312; Source Files <span style="font-weight:400;color:var(--text-muted)">(online — unsorted files for batching)</span></label>' +
+        '<input type="text" id="cfgSourcePath" placeholder="/Volumes/Public/projects/tosort" value="' + esc(state.config.sourcePath || "") + '">' +
+        '<div class="validation" id="cfgSourceVal"></div>' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label>&#9313; Sorted Files <span style="font-weight:400;color:var(--text-muted)">(staged batches, move online &rarr; offline)</span></label>' +
+        '<input type="text" id="cfgSortedPath" placeholder="/Volumes/Public/projects/tosort/_transfer-gate/outbox" value="' + esc(state.config.sortedPath || "") + '">' +
+        '<div class="validation" id="cfgSortedVal"></div>' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label>&#9314; Cabinet <span style="font-weight:400;color:var(--text-muted)">(offline — archive destination)</span></label>' +
+        '<input type="text" id="cfgCabinetRoot" value="' + esc(state.config.cabinetRoot || "") + '">' +
+        '<div class="validation" id="cfgCabinetVal"></div>' +
+      '</div>' +
+      '<hr style="border:none;border-top:1px solid var(--panel-border);margin:14px 0">' +
+      '<h3 style="margin-bottom:10px;font-size:14px;color:var(--text)">Advanced</h3>' +
+      '<div class="form-group">' +
+        '<label>oMLX Endpoint URL</label>' +
+        '<input type="text" id="cfgOmlxEndpoint" value="' + esc(state.config.omlxEndpoint || "http://localhost:8000/v1") + '">' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label>Media File Naming Rule</label>' +
+        '<input type="text" id="cfgMediaNaming" value="' + esc(state.config.mediaFileNamingRule || "{date} {title}") + '">' +
+        '<div class="validation">Placeholders: {date}, {title}, {ext}, {artist}, {album}</div>' +
+      '</div>' +
+      '<div class="form-group">' +
+        '<label>Structure Rules (JSON)</label>' +
+        '<textarea id="cfgRules">' + esc(JSON.stringify(state.rules, null, 2)) + '</textarea>' +
+      '</div>';
+
+    function bindPathValidation(inputId, valId, label) {
+      var el = document.getElementById(inputId);
+      var valEl = document.getElementById(valId);
+      el.addEventListener("input", function () {
+        if (el.value.trim().length > 0) {
+          valEl.textContent = label + " path set (validation requires server)";
+          valEl.className = "validation ok";
+        } else {
+          valEl.textContent = label + " path is required";
+          valEl.className = "validation err";
+        }
+      });
+    }
+    bindPathValidation("cfgSourcePath", "cfgSourceVal", "Source");
+    bindPathValidation("cfgSortedPath", "cfgSortedVal", "Sorted");
+    bindPathValidation("cfgCabinetRoot", "cfgCabinetVal", "Cabinet");
+
+    $settingsOverlay.classList.add("visible");
+  }
+
+  function closeSettings() {
+    $settingsOverlay.classList.remove("visible");
+  }
+
+  function saveSettings() {
+    var newConfig = {
+      sourcePath: document.getElementById("cfgSourcePath").value.trim(),
+      sortedPath: document.getElementById("cfgSortedPath").value.trim(),
+      cabinetRoot: document.getElementById("cfgCabinetRoot").value.trim(),
+      omlxEndpoint: document.getElementById("cfgOmlxEndpoint").value.trim(),
+      mediaFileNamingRule: document.getElementById("cfgMediaNaming").value.trim()
+    };
+
+    // Parse rules
+    var rulesText = document.getElementById("cfgRules").value.trim();
+    if (rulesText) {
+      try {
+        state.rules = JSON.parse(rulesText);
+      } catch (e) {
+        toast("Invalid rules JSON: " + e.message, true);
+        return;
+      }
+    }
+
+    // Update local state
+    Object.assign(state.config, newConfig);
+    renderHeader();
+
+    // Push to server
+    apiFetch("/api/config", { method: "PUT", body: newConfig })
+      .then(function (d) {
+        Object.assign(state.config, d);
+        renderHeader();
+        renderSetupBanner();
+        if (state.mode === "online") { loadFiles(); loadCabinet(); }
+        toast("Settings saved");
+        closeSettings();
+      })
+      .catch(function () {
+        renderSetupBanner();
+        toast("Settings saved locally (server unreachable)");
+        closeSettings();
+      });
+  }
+
+  /* ══════════════════════════════════════
+     Event Wiring
+     ══════════════════════════════════════ */
+  $modeSelect.addEventListener("change", function () {
+    var val = $modeSelect.value;
+    if (val === "auto") {
+      detectEnvironment();
+    } else {
+      setMode(val);
+    }
+  });
+
+  $btnConfig.addEventListener("click", openSettings);
+  $settingsClose.addEventListener("click", closeSettings);
+  $settingsCancel.addEventListener("click", closeSettings);
+  $settingsSave.addEventListener("click", saveSettings);
+
+  $settingsOverlay.addEventListener("click", function (e) {
+    if (e.target === $settingsOverlay) closeSettings();
+  });
+
+  /* Keyboard shortcuts */
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeSettings();
+  });
+
+  /* ══════════════════════════════════════
+     Boot
+     ══════════════════════════════════════ */
+  detectEnvironment();
+
+})();
+</script>
+</body>
+</html>

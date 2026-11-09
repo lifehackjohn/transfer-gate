@@ -1,0 +1,20 @@
+{
+    "sourcePath": "",
+    "sortedPath": "",
+    "cabinetRoot": "",
+    "inbox": "00 Inbox",
+    "manifestOutput": "gate-out",
+    "exclude": [
+        ".DS_Store",
+        "@eaDir",
+        ".Trashes",
+        ".TemporaryItems",
+        "#recycle",
+        ".streams",
+        "$RECYCLE.BIN",
+        "System Volume Information"
+    ],
+    "mediaFileNamingRule": "{date} {title}",
+    "omlxEndpoint": "http://localhost:8000/v1",
+    "serverPort": 8080
+}

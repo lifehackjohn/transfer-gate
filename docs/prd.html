@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD -- Transfer Gate v2: Portable Online/Offline File Sorting App</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.6;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Header bar ────────────────────────────────────────────── */
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  header h1 { font-size: 1.15rem; font-weight: 600; white-space: nowrap; }
+  header .subtitle { font-size: 0.82rem; color: #94a3b8; }
+
+  /* ── Sidebar navigation ────────────────────────────────────── */
+  nav.sidebar {
+    position: fixed;
+    top: 52px;
+    left: 0;
+    bottom: 0;
+    width: 240px;
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+  }
+  nav.sidebar a {
+    display: block;
+    padding: 7px 20px;
+    color: #475569;
+    text-decoration: none;
+    font-size: 0.85rem;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  nav.sidebar a:hover,
+  nav.sidebar a:focus {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-left-color: #3b82f6;
+  }
+  nav.sidebar a.active {
+    color: #3b82f6;
+    border-left-color: #3b82f6;
+    font-weight: 600;
+  }
+
+  /* ── Main content ──────────────────────────────────────────── */
+  main {
+    margin-left: 240px;
+    margin-top: 52px;
+    flex: 1;
+    padding: 32px;
+    display: flex;
+    justify-content: center;
+  }
+  .content-card {
+    background: #ffffff;
+    max-width: 960px;
+    width: 100%;
+    padding: 40px 48px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  /* ── Typography ────────────────────────────────────────────── */
+  h2 {
+    font-size: 1.4rem;
+    border-bottom: 2px solid #3b82f6;
+    padding-bottom: 8px;
+    margin-top: 40px;
+    margin-bottom: 16px;
+    color: #1e293b;
+  }
+  h2:first-child { margin-top: 0; }
+  h3 {
+    font-size: 1.1rem;
+    color: #334155;
+    margin-top: 24px;
+    margin-bottom: 10px;
+  }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 14px 24px; }
+  li { margin-bottom: 6px; }
+
+  a { color: #3b82f6; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  strong { font-weight: 600; }
+
+  .meta-block {
+    background: #f1f5f9;
+    border-left: 4px solid #3b82f6;
+    padding: 12px 18px;
+    margin-bottom: 28px;
+    font-size: 0.92rem;
+    color: #475569;
+  }
+
+  /* ── Tables ────────────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 0.9rem;
+  }
+  thead th {
+    background: #1e293b;
+    color: #ffffff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  tbody tr:nth-child(odd) { background: #f8fafc; }
+  tbody tr:nth-child(even) { background: #ffffff; }
+
+  /* ── Code blocks ───────────────────────────────────────────── */
+  code {
+    font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.88em;
+    background: #f1f5f9;
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 14px 0 20px;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ── Footer ────────────────────────────────────────────────── */
+  footer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    padding: 32px 0 20px;
+    margin-top: 48px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  /* ── Responsive ────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    nav.sidebar { display: none; }
+    main { margin-left: 0; }
+    .content-card { padding: 24px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- Header                                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<header>
+  <h1>PRD &mdash; Transfer Gate v2</h1>
+  <span class="subtitle">Portable Online/Offline File Sorting App</span>
+</header>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- Sidebar Navigation                                          -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<nav class="sidebar">
+  <a href="#problem-statement">1. Problem Statement</a>
+  <a href="#goals">2. Goals</a>
+  <a href="#user-stories">3. User Stories</a>
+  <a href="#functional-requirements">4. Functional Requirements</a>
+  <a href="#non-functional-requirements">5. Non-Functional Requirements</a>
+  <a href="#constraints">6. Constraints</a>
+  <a href="#out-of-scope">7. Out of Scope</a>
+  <a href="#success-criteria">8. Success Criteria</a>
+  <a href="#acceptance-tests">9. Acceptance Tests</a>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- Main Content                                                -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<main>
+<div class="content-card">
+
+  <h2 style="border-bottom:none; margin-bottom:4px;">PRD &mdash; Transfer Gate v2</h2>
+  <p style="font-size:1.05rem; color:#475569; margin-bottom:20px;">Portable Online/Offline File Sorting App</p>
+
+  <div class="meta-block">
+    <strong>Status:</strong> Rev 2 &mdash; Cabinet Abstraction &amp; Flexible Target Structure<br>
+    <strong>Issue:</strong> BLU-2656
+  </div>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <h2 id="problem-statement">1. Problem Statement</h2>
+
+  <p>The household digital archive spans two zones: an always-online NAS (Synology) running Linux, and an air-gapped Windows workstation connected to a large NTFS Cabinet drive. Files accumulate in a <code>tosort/</code> staging folder on the NAS. The current Transfer Gate v1 is CLI-only (PowerShell scripts and shell helpers) and offers no visual sorting workflow.</p>
+
+  <p>Moving files from the online zone to their final Cabinet location requires:</p>
+  <ol>
+    <li>Classifying each file.</li>
+    <li>Choosing or creating a destination folder.</li>
+    <li>Renaming to match naming conventions.</li>
+    <li>Staging onto USB media.</li>
+    <li>Verifying integrity offline.</li>
+    <li>Placing files in the Cabinet.</li>
+  </ol>
+  <p>This multi-step process is error-prone and slow without a UI.</p>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <h2 id="goals">2. Goals</h2>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Goal</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>G-1</strong></td><td>Reduce per-file sorting effort to under 30 seconds with AI-assisted classification.</td></tr>
+      <tr><td><strong>G-2</strong></td><td>Provide a portable UI that works in both online (NAS + Python) and offline (air-gapped Windows + PowerShell) zones with the same HTML file.</td></tr>
+      <tr><td><strong>G-3</strong></td><td>Guarantee safe data movement &mdash; no file is deleted from the source until a verified receipt returns through the gate.</td></tr>
+      <tr><td><strong>G-4</strong></td><td>Minimize the online footprint &mdash; metadata and manifests only; bulk files stay on the Cabinet drive.</td></tr>
+      <tr><td><strong>G-5</strong></td><td>Enable one-click batch staging and one-click batch placement.</td></tr>
+      <tr><td><strong>G-6</strong></td><td>Make the Cabinet mount-agnostic &mdash; a single config value (<code>cabinetRoot</code>) controls where the Cabinet is expected; changing the drive letter or mount point requires only a config update.</td></tr>
+      <tr><td><strong>G-7</strong></td><td>Use folder names as taxonomy &mdash; the hierarchical folder structure of the Cabinet IS the classification system; <code>structure-rules.yaml</code> adds metadata and constraints but folders are primary.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <h2 id="user-stories">3. User Stories</h2>
+
+  <h3>US-0: Cabinet Path Setup</h3>
+  <p>As a user, I can configure the Cabinet root path (e.g., <code>D:\Archive</code> or <code>/volume1/Archive</code>) via the settings overlay, and the entire app adapts to that path without code changes.</p>
+
+  <h3>Online Zone</h3>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Story</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>US-1</strong></td><td>As a user, I open Transfer Gate in a browser and see all unsorted files from <code>tosort/</code> in the left panel with metadata (name, size, date, extension).</td></tr>
+      <tr><td><strong>US-2</strong></td><td>As a user, I see an AI-suggested destination folder and confidence score for each file, powered by a local oMLX model.</td></tr>
+      <tr><td><strong>US-3</strong></td><td>As a user, I can accept, override, or skip the AI suggestion for each file using the file card controls.</td></tr>
+      <tr><td><strong>US-4</strong></td><td>As a user, I must provide a renamed filename following the naming convention before a file can be staged (mandatory rename).</td></tr>
+      <tr><td><strong>US-5</strong></td><td>As a user, I click &ldquo;Stage Batch&rdquo; and all accepted files are copied into a timestamped batch folder with a <code>placement-manifest.json</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Offline Zone</h3>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Story</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>US-6</strong></td><td>As a user, I open Transfer Gate on the air-gapped machine and it auto-detects offline mode (no Python server).</td></tr>
+      <tr><td><strong>US-7</strong></td><td>As a user, I select an inbound USB batch and see verification status (checksum pass/fail) for every file.</td></tr>
+      <tr><td><strong>US-8</strong></td><td>As a user, I see a placement preview showing where each file will land in the Cabinet tree.</td></tr>
+      <tr><td><strong>US-9</strong></td><td>As a user, I click &ldquo;Place Files&rdquo; and all verified files are moved to their Cabinet destinations, with conflict handling.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Cross-Zone</h3>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Story</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>US-10</strong></td><td>As a user, I carry a USB stick from the online machine to the offline machine and back, and the manifests handle the full round trip.</td></tr>
+      <tr><td><strong>US-11</strong></td><td>As a user, I can export the Cabinet folder structure from the offline machine so the online AI has an up-to-date target tree.</td></tr>
+      <tr><td><strong>US-12</strong></td><td>As a user, returning the USB with placement receipts allows the online side to safely prune staged files.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <h2 id="functional-requirements">4. Functional Requirements</h2>
+
+  <h3>Core Architecture</h3>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Requirement</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>FR-1</strong></td><td>The app SHALL consist of a single HTML file (<code>transfer-gate.html</code>) that works in both zones.</td></tr>
+      <tr><td><strong>FR-2</strong></td><td>The HTML UI SHALL detect whether a Python backend is available and switch between online and offline modes automatically.</td></tr>
+      <tr><td><strong>FR-3</strong></td><td>Online mode SHALL use a Python 3 HTTP server (<code>transfer-gate-server.py</code>) for filesystem access and oMLX communication.</td></tr>
+      <tr><td><strong>FR-4</strong></td><td>Offline mode SHALL use a PowerShell HTTP server (<code>transfer-gate.ps1 -Mode serve</code>) or run as a static file with localStorage fallback.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Configuration &amp; Cabinet</h3>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Requirement</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>FR-5</strong></td><td>The Cabinet root path SHALL be configurable via <code>transfer-gate.json</code> and editable in the settings overlay.</td></tr>
+      <tr><td><strong>FR-6</strong></td><td>The Cabinet tree SHALL be loaded from the live filesystem (online) or from <code>offline-structure-manifest.json</code> (offline/online fallback).</td></tr>
+      <tr><td><strong>FR-7</strong></td><td>Classification SHALL use the oMLX folder tree as its taxonomy &mdash; the AI prompt includes the full Cabinet folder hierarchy from <code>structure-rules.yaml</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>File Cards &amp; Sorting</h3>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Requirement</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>FR-8</strong></td><td>Each file card SHALL display: original filename, file metadata (size, date, extension), AI suggestion badge with confidence, destination folder dropdown, rename field, and Accept/Skip/Override buttons.</td></tr>
+      <tr><td><strong>FR-9</strong></td><td>Mandatory rename: a file SHALL NOT be staged until the user provides a renamed filename that differs from the original (enforced in UI).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Batch Staging</h3>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Requirement</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>FR-10</strong></td><td>Batch staging SHALL create a timestamped directory containing: a <code>payload/</code> subfolder with copied files (renamed), a <code>placement-manifest.json</code> mapping each file to its destination, and a <code>transfer-manifest.json</code> with SHA-256 checksums.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Server Endpoints</h3>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Requirement</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>FR-11</strong></td><td>The Python server SHALL expose REST endpoints:</td></tr>
+    </tbody>
+  </table>
+  <pre><code>GET  /api/files             # List unsorted files
+GET  /api/cabinet            # Cabinet tree
+POST /api/classify           # AI classification
+POST /api/stage              # Batch staging
+GET  /api/config             # Read config
+PUT  /api/config             # Write config
+GET  /api/structure-rules    # Read structure rules
+PUT  /api/structure-rules    # Write structure rules</code></pre>
+
+  <h3>PowerShell Engine</h3>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Requirement</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>FR-12</strong></td><td>The PowerShell engine SHALL support modes: <code>verify</code>, <code>export</code>, <code>place</code>, <code>serve</code>, <code>all</code>.</td></tr>
+      <tr><td><strong>FR-13</strong></td><td>Verify mode SHALL check every file in a batch against its <code>transfer-manifest.json</code> (existence, size, SHA-256).</td></tr>
+      <tr><td><strong>FR-14</strong></td><td>Place mode SHALL move verified files from the batch payload to their Cabinet destinations per <code>placement-manifest.json</code>.</td></tr>
+      <tr><td><strong>FR-15</strong></td><td>Export mode SHALL walk the Cabinet tree and emit <code>offline-structure-manifest.json</code> (paths and counts only, no filenames).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Conflict Handling</h3>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Requirement</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>FR-16</strong></td><td>Conflict detection SHALL operate at three levels: <em>folder conflict</em> (destination folder does not exist), <em>file conflict</em> (destination file already exists), and <em>no conflict</em>.</td></tr>
+      <tr><td><strong>FR-17</strong></td><td>Conflict resolution SHALL support: skip (leave file in batch), rename (auto-suffix), and overwrite (replace existing).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Receipts &amp; Compatibility</h3>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Requirement</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>FR-18</strong></td><td>Placement receipts (<code>placement-receipt.json</code>) SHALL record the outcome of each file placement (placed, skipped, conflict-renamed, failed).</td></tr>
+      <tr><td><strong>FR-19</strong></td><td>The v1 config format (<code>archiveRoot</code>, absolute inbox paths) SHALL be auto-migrated to v2 format (<code>cabinetRoot</code>, relative paths).</td></tr>
+      <tr><td><strong>FR-20</strong></td><td>v1 manifests (<code>transfer-manifest.json</code> from v1 scripts) SHALL remain supported for backward compatibility.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>UI &amp; Structure Rules</h3>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Requirement</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>FR-21</strong></td><td>Structure rules SHALL be editable via the UI settings overlay and saved to <code>structure-rules.yaml</code>.</td></tr>
+      <tr><td><strong>FR-22</strong></td><td>The UI SHALL display a summary status bar showing counts of pending, accepted, skipped, and conflict files.</td></tr>
+      <tr><td><strong>FR-23</strong></td><td>The app SHALL support UNC paths (<code>\\server\share</code>) and drive-letter paths (<code>D:\Archive</code>) on Windows, and POSIX paths on Linux/macOS.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <h2 id="non-functional-requirements">5. Non-Functional Requirements</h2>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Requirement</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>NF-1</strong></td><td>The entire UI SHALL be a single HTML file with embedded CSS and JavaScript &mdash; no external CDN, no npm, no build step.</td></tr>
+      <tr><td><strong>NF-2</strong></td><td>The Python backend SHALL use only Python 3 standard library modules (exception: <code>pyyaml</code> for structure-rules parsing).</td></tr>
+      <tr><td><strong>NF-3</strong></td><td>No cloud-based LLMs &mdash; classification uses only the local oMLX endpoint.</td></tr>
+      <tr><td><strong>NF-4</strong></td><td>All paths SHALL be mount-agnostic: changing <code>cabinetRoot</code> in config is the only step needed when the Cabinet moves to a different drive letter or mount point.</td></tr>
+      <tr><td><strong>NF-5</strong></td><td>File operations SHALL be atomic where possible &mdash; copy-then-verify, not move-then-hope.</td></tr>
+      <tr><td><strong>NF-6</strong></td><td>The UI SHALL render correctly in Chrome 90+ and Edge 90+.</td></tr>
+      <tr><td><strong>NF-7</strong></td><td>The Python server SHALL bind to localhost only (<code>127.0.0.1</code>) for security.</td></tr>
+      <tr><td><strong>NF-8</strong></td><td>SHA-256 checksums SHALL be computed for every file in every batch.</td></tr>
+      <tr><td><strong>NF-9</strong></td><td>The app SHALL handle files up to 4 GB individually.</td></tr>
+      <tr><td><strong>NF-10</strong></td><td>Offline operations SHALL complete without any network access.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <h2 id="constraints">6. Constraints</h2>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Constraint</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>C-1</strong></td><td>Air gap is non-negotiable &mdash; the Cabinet machine has no internet access and will not gain it.</td></tr>
+      <tr><td><strong>C-2</strong></td><td>No Python on the offline machine &mdash; PowerShell 5.1 is the only scripting runtime available.</td></tr>
+      <tr><td><strong>C-3</strong></td><td>oMLX availability is not guaranteed &mdash; the AI classification must degrade gracefully to manual-only sorting.</td></tr>
+      <tr><td><strong>C-4</strong></td><td>Browser sandbox prevents direct filesystem access &mdash; a local server (Python or PowerShell) is required for file operations.</td></tr>
+      <tr><td><strong>C-5</strong></td><td>Two-phase prune contract: no source file is deleted until a verified receipt returns through the gate (BLU-1845).</td></tr>
+      <tr><td><strong>C-6</strong></td><td>Folder names are taxonomy &mdash; the classification system is the Cabinet's folder hierarchy, not a separate database.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <h2 id="out-of-scope">7. Out of Scope</h2>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Item</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>OS-1</strong></td><td>Automated USB scheduling or hotplug detection.</td></tr>
+      <tr><td><strong>OS-2</strong></td><td>Full bidirectional replication or sync (this is one-way: online to offline Cabinet).</td></tr>
+      <tr><td><strong>OS-3</strong></td><td>Cloud-based classification or any external API calls.</td></tr>
+      <tr><td><strong>OS-4</strong></td><td>Mobile device support (tablet/phone UI).</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <h2 id="success-criteria">8. Success Criteria</h2>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Criterion</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>SC-1</strong></td><td>A new unsorted file can be classified, renamed, and staged in under 30 seconds with AI assistance.</td></tr>
+      <tr><td><strong>SC-2</strong></td><td>A batch of 50 files can be verified and placed offline in under 5 minutes.</td></tr>
+      <tr><td><strong>SC-3</strong></td><td>Zero data loss &mdash; no file is deleted from source without a verified receipt.</td></tr>
+      <tr><td><strong>SC-4</strong></td><td>The same HTML file works in both online and offline modes without modification.</td></tr>
+      <tr><td><strong>SC-5</strong></td><td>Changing the Cabinet path (e.g., from <code>D:\Archive</code> to <code>E:\Cabinet</code>) requires only a config update, no code changes.</td></tr>
+      <tr><td><strong>SC-6</strong></td><td>v1 configs and manifests are auto-migrated without user intervention.</td></tr>
+      <tr><td><strong>SC-7</strong></td><td>The system works with oMLX unavailable, falling back to manual classification.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <h2 id="acceptance-tests">9. Acceptance Tests</h2>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Test</th><th>Expected Result</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>T-1</strong></td>
+        <td>Online Sort &mdash; Load 10 files in <code>tosort/</code>, classify with AI, accept all, stage batch.</td>
+        <td>Batch folder created with <code>payload/</code>, <code>placement-manifest.json</code>, <code>transfer-manifest.json</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>T-2</strong></td>
+        <td>Offline Verify &mdash; Copy batch to offline inbox, run verify mode.</td>
+        <td>All files pass checksum verification, receipt generated.</td>
+      </tr>
+      <tr>
+        <td><strong>T-3</strong></td>
+        <td>Offline Place &mdash; Run place mode on verified batch.</td>
+        <td>Files moved to correct Cabinet folders per <code>placement-manifest</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>T-4</strong></td>
+        <td>Conflict: File Exists &mdash; Place a file where destination already has same-name file.</td>
+        <td>Conflict detected, user prompted for skip/rename/overwrite.</td>
+      </tr>
+      <tr>
+        <td><strong>T-5</strong></td>
+        <td>Conflict: Folder Missing &mdash; Place a file to a folder that does not exist.</td>
+        <td>Folder auto-created, file placed.</td>
+      </tr>
+      <tr>
+        <td><strong>T-6</strong></td>
+        <td>Round Trip &mdash; Full online sort, USB transfer, offline verify+place, return USB with receipt.</td>
+        <td>Online side confirms placement, source files eligible for pruning.</td>
+      </tr>
+      <tr>
+        <td><strong>T-7</strong></td>
+        <td>UNC Paths &mdash; Set <code>cabinetRoot</code> to <code>\\NAS\Archive</code>, run export.</td>
+        <td>Structure manifest generated correctly.</td>
+      </tr>
+      <tr>
+        <td><strong>T-8</strong></td>
+        <td>v1 Migration &mdash; Start with v1 config (<code>archiveRoot</code>, absolute paths).</td>
+        <td>Auto-migrated to v2 format on first run.</td>
+      </tr>
+      <tr>
+        <td><strong>T-9</strong></td>
+        <td>Mandatory Rename &mdash; Try to stage a file without renaming.</td>
+        <td>UI blocks staging, shows validation error.</td>
+      </tr>
+      <tr>
+        <td><strong>T-10</strong></td>
+        <td>oMLX Unavailable &mdash; Start online mode with oMLX endpoint down.</td>
+        <td>UI shows &ldquo;AI unavailable&rdquo; badge, manual classification works normally.</td>
+      </tr>
+      <tr>
+        <td><strong>T-11</strong></td>
+        <td>Large File &mdash; Stage and verify a 2 GB file.</td>
+        <td>SHA-256 computed correctly, file transferred intact.</td>
+      </tr>
+      <tr>
+        <td><strong>T-12</strong></td>
+        <td>Structure Rules Edit &mdash; Edit <code>structure-rules.yaml</code> via UI, re-classify a file.</td>
+        <td>New rules reflected in AI suggestions.</td>
+      </tr>
+      <tr>
+        <td><strong>T-13</strong></td>
+        <td>Cabinet Path Change &mdash; Change <code>cabinetRoot</code> in config, restart.</td>
+        <td>All operations use new path, no errors.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ──────────────────────────────────────────────────────── -->
+  <footer>Transfer Gate v2 Documentation</footer>
+
+</div>
+</main>
+
+</body>
+</html>

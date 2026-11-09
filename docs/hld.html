@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HLD -- Transfer Gate v2: Architecture &amp; Technical Design</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.6;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Header bar ────────────────────────────────────────────── */
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  header h1 { font-size: 1.15rem; font-weight: 600; white-space: nowrap; }
+  header .subtitle { font-size: 0.82rem; color: #94a3b8; }
+
+  /* ── Sidebar navigation ────────────────────────────────────── */
+  nav.sidebar {
+    position: fixed;
+    top: 52px;
+    left: 0;
+    bottom: 0;
+    width: 240px;
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+  }
+  nav.sidebar a {
+    display: block;
+    padding: 7px 20px;
+    color: #475569;
+    text-decoration: none;
+    font-size: 0.85rem;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  nav.sidebar a:hover,
+  nav.sidebar a:focus {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-left-color: #3b82f6;
+  }
+  nav.sidebar a.active {
+    color: #3b82f6;
+    border-left-color: #3b82f6;
+    font-weight: 600;
+  }
+
+  /* ── Main content ──────────────────────────────────────────── */
+  main {
+    margin-left: 240px;
+    margin-top: 52px;
+    flex: 1;
+    padding: 32px;
+    display: flex;
+    justify-content: center;
+  }
+  .content-card {
+    background: #ffffff;
+    max-width: 960px;
+    width: 100%;
+    padding: 40px 48px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  /* ── Typography ────────────────────────────────────────────── */
+  h2 {
+    font-size: 1.4rem;
+    border-bottom: 2px solid #3b82f6;
+    padding-bottom: 8px;
+    margin-top: 40px;
+    margin-bottom: 16px;
+    color: #1e293b;
+  }
+  h2:first-child { margin-top: 0; }
+  h3 {
+    font-size: 1.1rem;
+    color: #334155;
+    margin-top: 24px;
+    margin-bottom: 10px;
+  }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 14px 24px; }
+  li { margin-bottom: 6px; }
+
+  a { color: #3b82f6; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  strong { font-weight: 600; }
+
+  .meta-block {
+    background: #f1f5f9;
+    border-left: 4px solid #3b82f6;
+    padding: 12px 18px;
+    margin-bottom: 28px;
+    font-size: 0.92rem;
+    color: #475569;
+  }
+
+  /* ── Info box / blockquote ─────────────────────────────────── */
+  blockquote, .info-box {
+    border-left: 4px solid #3b82f6;
+    background: #eff6ff;
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    margin: 14px 0 20px;
+  }
+
+  /* ── Tables ────────────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 0.9rem;
+  }
+  thead th {
+    background: #1e293b;
+    color: #ffffff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  tbody tr:nth-child(odd) { background: #f8fafc; }
+  tbody tr:nth-child(even) { background: #ffffff; }
+
+  /* ── Code blocks ───────────────────────────────────────────── */
+  code {
+    font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.88em;
+    background: #f1f5f9;
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 14px 0 20px;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ── Footer ────────────────────────────────────────────────── */
+  footer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    padding: 32px 0 20px;
+    margin-top: 48px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  /* ── Responsive ────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    nav.sidebar { display: none; }
+    main { margin-left: 0; }
+    .content-card { padding: 24px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- Header                                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<header>
+  <h1>HLD &mdash; Transfer Gate v2</h1>
+  <span class="subtitle">Status: Rev 2 &mdash; Cabinet Abstraction &amp; Flexible Target Structure</span>
+</header>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- Sidebar Navigation                                          -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<nav class="sidebar">
+  <a href="#architecture-overview">1. Architecture Overview</a>
+  <a href="#cabinet-abstraction">2. Cabinet Abstraction</a>
+  <a href="#component-design">3. Component Design</a>
+  <a href="#data-flow">4. Data Flow</a>
+  <a href="#manifest-formats">5. Manifest Formats</a>
+  <a href="#partial-structure-mirror">6. Partial Structure Mirror</a>
+  <a href="#conflict-detection">7. Conflict Detection</a>
+  <a href="#security">8. Security</a>
+  <a href="#graceful-degradation">9. Graceful Degradation</a>
+  <a href="#migration-from-v1">10. Migration from v1</a>
+  <a href="#file-inventory">11. File Inventory</a>
+  <a href="#implementation-phases">12. Implementation Phases</a>
+  <a href="#risks-mitigations">13. Risks &amp; Mitigations</a>
+</nav>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- Main Content                                                -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<main>
+<div class="content-card">
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="architecture-overview">1. Architecture Overview</h2>
+
+<p>Transfer Gate v2 is a three-component system designed for portable file sorting across online and air-gapped zones:</p>
+
+<ol>
+  <li><strong>transfer-gate.html</strong> &mdash; Single-file portable UI (HTML + CSS + JS). Runs in any modern browser. Detects environment and switches between online and offline modes.</li>
+  <li><strong>transfer-gate-server.py</strong> &mdash; Python 3 HTTP backend for the online zone. Provides filesystem access, oMLX AI classification, batch staging, and config management.</li>
+  <li><strong>transfer-gate.ps1</strong> &mdash; PowerShell engine for the offline zone. Handles verification, file placement, structure export, and can serve the HTML UI locally.</li>
+</ol>
+
+<div class="info-box">
+  <p>The central abstraction is the <strong>Cabinet</strong> &mdash; a root folder (e.g., <code>D:\Archive</code>) containing a hierarchical tree of subfolders that serves as both the filing taxonomy and the physical storage.</p>
+</div>
+
+<h3>System Architecture Diagram</h3>
+
+<pre><code>&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;                        ONLINE ZONE (NAS)                         &#9474;
+&#9474;                                                                   &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;     HTTP      &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;           &#9474;
+&#9474;  &#9474; Browser       &#9474;&#9668;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9658;&#9474; transfer-gate-     &#9474;           &#9474;
+&#9474;  &#9474; transfer-gate &#9474;  localhost    &#9474; server.py          &#9474;           &#9474;
+&#9474;  &#9474; .html         &#9474;  :8080       &#9474;                    &#9474;           &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;               &#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;  &#9474;           &#9474;
+&#9474;                                  &#9474;  &#9474; oMLX local   &#9474;  &#9474;           &#9474;
+&#9474;                                  &#9474;  &#9474; LLM endpoint &#9474;  &#9474;           &#9474;
+&#9474;                                  &#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;  &#9474;           &#9474;
+&#9474;                                  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;           &#9474;
+&#9474;                                            &#9474;                      &#9474;
+&#9474;                                   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9660;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;             &#9474;
+&#9474;                                   &#9474;   tosort/        &#9474;             &#9474;
+&#9474;                                   &#9474;   (unsorted      &#9474;             &#9474;
+&#9474;                                   &#9474;    files)        &#9474;             &#9474;
+&#9474;                                   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;             &#9474;
+&#9474;                                            &#9474; stage                &#9474;
+&#9474;                                   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9660;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;             &#9474;
+&#9474;                                   &#9474;   gate-out/      &#9474;             &#9474;
+&#9474;                                   &#9474;   batch-YYYYMMDD &#9474;             &#9474;
+&#9474;                                   &#9474;   &#9500;&#9472;&#9472; payload/   &#9474;             &#9474;
+&#9474;                                   &#9474;   &#9500;&#9472;&#9472; placement- &#9474;             &#9474;
+&#9474;                                   &#9474;   &#9474;   manifest   &#9474;             &#9474;
+&#9474;                                   &#9474;   &#9492;&#9472;&#9472; transfer-  &#9474;             &#9474;
+&#9474;                                   &#9474;       manifest   &#9474;             &#9474;
+&#9474;                                   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;             &#9474;
+&#9474;                                            &#9474;                      &#9474;
+&#9500;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9508;
+&#9474;                     USB STICK              &#9474;                      &#9474;
+&#9500;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9532;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9508;
+&#9474;                                            &#9474;                      &#9474;
+&#9474;                       OFFLINE ZONE (Cabinet)                      &#9474;
+&#9474;                                                                   &#9474;
+&#9474;  &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;     HTTP      &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;           &#9474;
+&#9474;  &#9474; Browser       &#9474;&#9668;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9658;&#9474; transfer-gate.ps1  &#9474;           &#9474;
+&#9474;  &#9474; transfer-gate &#9474;  localhost    &#9474; -Mode serve        &#9474;           &#9474;
+&#9474;  &#9474; .html         &#9474;  :8080       &#9474;                    &#9474;           &#9474;
+&#9474;  &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;               &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9516;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;           &#9474;
+&#9474;                                            &#9474;                      &#9474;
+&#9474;                                   &#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9660;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;             &#9474;
+&#9474;                                   &#9474;   Cabinet (D:\)  &#9474;             &#9474;
+&#9474;                                   &#9474;   &#9500;&#9472;&#9472; 00 Inbox   &#9474;             &#9474;
+&#9474;                                   &#9474;   &#9500;&#9472;&#9472; 10 Finance &#9474;             &#9474;
+&#9474;                                   &#9474;   &#9500;&#9472;&#9472; 20 Legal   &#9474;             &#9474;
+&#9474;                                   &#9474;   &#9500;&#9472;&#9472; 30 Personal&#9474;             &#9474;
+&#9474;                                   &#9474;   &#9492;&#9472;&#9472; 40 Business&#9474;             &#9474;
+&#9474;                                   &#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;             &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</code></pre>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="cabinet-abstraction">2. Cabinet Abstraction</h2>
+
+<h3>What is the Cabinet?</h3>
+<p>The Cabinet is the root folder of the user's hierarchical file archive. It contains numbered top-level folders (e.g., &ldquo;10 Finance&rdquo;, &ldquo;20 Legal&rdquo;) with nested subfolders. The folder hierarchy <strong>IS</strong> the classification taxonomy.</p>
+
+<h3>Path Resolution Chain</h3>
+<p>When the app starts, it resolves the Cabinet path through this chain:</p>
+<ol>
+  <li><strong>Config file</strong> &mdash; <code>transfer-gate.json</code>: <code>cabinetRoot</code></li>
+  <li><strong>Validation</strong> &mdash; does the path exist and is it accessible?</li>
+  <li><strong>Interactive fallback</strong> &mdash; prompt user via settings overlay</li>
+  <li><strong>Session storage</strong> &mdash; remember for current session</li>
+</ol>
+
+<h3>Mount Variant Handling</h3>
+<table>
+  <thead>
+    <tr><th>Scenario</th><th>cabinetRoot value</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Windows local drive</td><td><code>D:\Archive</code></td><td>Most common offline setup</td></tr>
+    <tr><td>Windows UNC</td><td><code>\\NAS\share\Archive</code></td><td>Network share</td></tr>
+    <tr><td>Linux/macOS mount</td><td><code>/volume1/Archive</code></td><td>NAS or mounted drive</td></tr>
+    <tr><td>WSL path</td><td><code>/mnt/d/Archive</code></td><td>Windows Subsystem for Linux</td></tr>
+    <tr><td>Portable (relative)</td><td><code>./Cabinet</code></td><td>Relative to app directory</td></tr>
+  </tbody>
+</table>
+
+<h3>oMLX Folder Understanding</h3>
+<p>The AI classification uses the Cabinet's folder tree as its taxonomy. The full folder hierarchy (from <code>structure-rules.yaml</code> or live scan) is included in the classification prompt. The AI returns a suggested folder path and confidence score. Folder descriptions from <code>structure-rules.yaml</code> enrich the prompt.</p>
+
+<h3>Structure Rules</h3>
+<p>Defined in <code>structure-rules.yaml</code> and editable via the UI. They add metadata (descriptions, accepted file types, naming conventions) to folders but do not replace the folder hierarchy as the primary taxonomy.</p>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="component-design">3. Component Design</h2>
+
+<h3>transfer-gate.html</h3>
+<ul>
+  <li><strong>Environment detection:</strong> on load, attempts to reach <code>/api/health</code>. If reachable, enters online mode. If not, enters offline mode (localStorage-based).</li>
+  <li><strong>Online mode:</strong> full sort-and-stage workflow with AI classification.</li>
+  <li><strong>Offline mode:</strong> verify-and-place workflow, or serves as viewer for manifests.</li>
+  <li><strong>Tech:</strong> vanilla HTML/CSS/JS, no frameworks, no build step, no CDN.</li>
+</ul>
+
+<h3>transfer-gate-server.py &mdash; Endpoints</h3>
+<table>
+  <thead>
+    <tr><th>Endpoint</th><th>Method</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>/api/health</code></td><td>GET</td><td>Server health check, returns version</td></tr>
+    <tr><td><code>/api/files</code></td><td>GET</td><td>List unsorted files in tosort/ directory</td></tr>
+    <tr><td><code>/api/cabinet</code></td><td>GET</td><td>Load Cabinet folder tree</td></tr>
+    <tr><td><code>/api/classify</code></td><td>POST</td><td>Classify a file using oMLX</td></tr>
+    <tr><td><code>/api/stage</code></td><td>POST</td><td>Stage accepted files into a batch</td></tr>
+    <tr><td><code>/api/config</code></td><td>GET/PUT</td><td>Read or update configuration</td></tr>
+    <tr><td><code>/api/structure-rules</code></td><td>GET/PUT</td><td>Read or update structure-rules.yaml</td></tr>
+    <tr><td><code>/</code></td><td>GET</td><td>Serve transfer-gate.html</td></tr>
+  </tbody>
+</table>
+
+<h3>oMLX Classification Strategy</h3>
+<ol>
+  <li>Build prompt with file metadata (name, extension, size, date) and full Cabinet tree with descriptions.</li>
+  <li>Send to local oMLX endpoint (OpenAI-compatible chat API).</li>
+  <li>Parse response for suggested folder path and confidence (0.0&ndash;1.0).</li>
+  <li>If oMLX is unreachable, return empty suggestion (UI shows manual-only mode).</li>
+</ol>
+
+<h3>transfer-gate.ps1 &mdash; Modes</h3>
+<table>
+  <thead>
+    <tr><th>Mode</th><th>Description</th><th>Key Operations</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>serve</code></td><td>Start local HTTP server for HTML UI</td><td>Bind localhost:8080, serve HTML, handle API calls</td></tr>
+    <tr><td><code>verify</code></td><td>Verify inbound USB batches</td><td>Check existence, size, SHA-256 per transfer-manifest</td></tr>
+    <tr><td><code>place</code></td><td>Move verified files to Cabinet</td><td>Read placement-manifest, handle conflicts, move files</td></tr>
+    <tr><td><code>export</code></td><td>Export Cabinet structure</td><td>Walk tree, emit offline-structure-manifest.json</td></tr>
+    <tr><td><code>all</code></td><td>Run verify then export (default)</td><td>Combined workflow</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Config:</strong> reads <code>transfer-gate.json</code> from script directory. Auto-migrates v1 format (<code>archiveRoot</code> to <code>cabinetRoot</code>).</p>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="data-flow">4. Data Flow</h2>
+
+<p>Full round-trip data flow through all four phases:</p>
+
+<h3>Phase 1: Online Sort &amp; Stage</h3>
+<ol>
+  <li>User opens browser to <code>localhost:8080</code></li>
+  <li>Server loads unsorted files from <code>tosort/</code></li>
+  <li>Server loads Cabinet tree (live or from manifest)</li>
+  <li>AI classifies each file, suggests destination</li>
+  <li>User reviews, accepts/overrides, renames files</li>
+  <li>User clicks &ldquo;Stage Batch&rdquo;</li>
+  <li>Server creates <code>batch-YYYYMMDD-HHMMSS/</code> with <code>payload/</code> and manifests</li>
+</ol>
+
+<h3>Phase 2: USB Transfer</h3>
+<ol>
+  <li>User copies batch folder to USB stick</li>
+  <li>User carries USB to offline machine</li>
+  <li>USB plugged into offline workstation</li>
+</ol>
+
+<h3>Phase 3: Offline Verify &amp; Place</h3>
+<ol>
+  <li>User opens Transfer Gate on offline machine</li>
+  <li>App detects offline mode</li>
+  <li>User selects batch from inbox</li>
+  <li>PowerShell verifies every file (SHA-256)</li>
+  <li>UI shows placement preview</li>
+  <li>User clicks &ldquo;Place Files&rdquo;</li>
+  <li>PowerShell moves files to Cabinet destinations</li>
+  <li>Placement receipt generated</li>
+</ol>
+
+<h3>Phase 4: Return Trip</h3>
+<ol>
+  <li>User copies <code>placement-receipt.json</code> to USB</li>
+  <li>Optionally exports updated structure manifest</li>
+  <li>Returns USB to online machine</li>
+  <li>Online side reads receipt, marks source files as safe to prune</li>
+</ol>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="manifest-formats">5. Manifest Formats</h2>
+
+<h3>v1 Format (preserved for compatibility)</h3>
+<p><code>transfer-manifest.json</code> &mdash; array of file entries with <code>name</code>, <code>size</code>, <code>sha256</code>.</p>
+
+<h3>v2 Formats</h3>
+
+<h3>placement-manifest.json</h3>
+<pre><code>{
+  "version": 2,
+  "batchId": "batch-20261107-143022",
+  "createdAt": "2026-11-07T14:30:22Z",
+  "cabinetRoot": "D:\\Archive",
+  "files": [
+    {
+      "originalName": "scan_receipt_2026.pdf",
+      "renamedName": "2026-11-01 Office Supply Receipt.pdf",
+      "destination": "10 Finance/Invoices",
+      "sha256": "a1b2c3d4...",
+      "size": 245760,
+      "classification": {
+        "suggestedBy": "omlx",
+        "confidence": 0.87,
+        "overridden": false
+      }
+    }
+  ]
+}</code></pre>
+
+<h3>placement-receipt.json</h3>
+<pre><code>{
+  "version": 2,
+  "batchId": "batch-20261107-143022",
+  "processedAt": "2026-11-07T16:45:10Z",
+  "cabinetRoot": "D:\\Archive",
+  "results": [
+    {
+      "renamedName": "2026-11-01 Office Supply Receipt.pdf",
+      "destination": "10 Finance/Invoices",
+      "status": "placed",
+      "finalPath": "D:\\Archive\\10 Finance\\Invoices\\2026-11-01 Office Supply Receipt.pdf"
+    }
+  ],
+  "summary": {
+    "total": 1,
+    "placed": 1,
+    "skipped": 0,
+    "conflictRenamed": 0,
+    "failed": 0
+  }
+}</code></pre>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="partial-structure-mirror">6. Partial Structure Mirror</h2>
+
+<p>The online zone does not need the full Cabinet &mdash; only its folder structure. The offline export produces <code>offline-structure-manifest.json</code> containing directory paths and aggregate counts (file count, total bytes per folder). No individual filenames or file contents cross the gate. This sparse tree approach keeps the USB payload small and avoids leaking file inventories.</p>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="conflict-detection">7. Conflict Detection &amp; Resolution</h2>
+
+<h3>Detection Levels</h3>
+<table>
+  <thead>
+    <tr><th>Level</th><th>Condition</th><th>Severity</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Folder conflict</td><td>Destination folder does not exist in Cabinet</td><td>Warning (auto-create)</td></tr>
+    <tr><td>File conflict</td><td>File with same name exists at destination</td><td>Error (requires resolution)</td></tr>
+    <tr><td>No conflict</td><td>Path clear</td><td>OK</td></tr>
+  </tbody>
+</table>
+
+<h3>Resolution Strategies</h3>
+<table>
+  <thead>
+    <tr><th>Strategy</th><th>Behavior</th><th>When Used</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Skip</td><td>Leave file in batch, do not place</td><td>User choice or auto on error</td></tr>
+    <tr><td>Rename</td><td>Add numeric suffix (e.g., &ldquo; (2)&rdquo;)</td><td>User choice for file conflicts</td></tr>
+    <tr><td>Overwrite</td><td>Replace existing file at destination</td><td>User explicit confirmation only</td></tr>
+    <tr><td>Auto-create</td><td>Create missing destination folder</td><td>Automatic for folder conflicts</td></tr>
+  </tbody>
+</table>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="security">8. Security</h2>
+
+<ul>
+  <li><strong>Metadata only for oMLX:</strong> file contents are never sent to the AI. Only filename, extension, size, and date are included in classification prompts.</li>
+  <li><strong>Localhost binding:</strong> both Python and PowerShell servers bind to <code>127.0.0.1</code> only, rejecting connections from other machines.</li>
+  <li><strong>SHA-256 checksums:</strong> every file in every batch has a checksum computed at staging and verified at placement. Mismatch = verification failure.</li>
+  <li><strong>No credentials stored:</strong> no API keys, no tokens, no passwords in config or manifests.</li>
+</ul>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="graceful-degradation">9. Graceful Degradation</h2>
+
+<table>
+  <thead>
+    <tr><th>Condition</th><th>Fallback Behavior</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>oMLX endpoint unreachable</td><td>Manual classification only; AI badges hidden</td></tr>
+    <tr><td>Cabinet path invalid/unmounted</td><td>Settings overlay prompts for valid path; operations blocked until resolved</td></tr>
+    <tr><td>No structure-rules.yaml</td><td>Folder tree used without descriptions; classification still works</td></tr>
+    <tr><td>No pyyaml installed</td><td>Structure rules unavailable; folder tree from live scan only</td></tr>
+    <tr><td>PowerShell execution policy restrictive</td><td>User runs with <code>-ExecutionPolicy Bypass</code> flag</td></tr>
+    <tr><td>Browser lacks localStorage</td><td>Session-only state; no persistence between page loads</td></tr>
+    <tr><td>Transfer manifest missing from batch</td><td>Verification skipped with warning; placement still possible</td></tr>
+    <tr><td>Very large batch (&gt;500 files)</td><td>Pagination in UI; progress bar for operations</td></tr>
+  </tbody>
+</table>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="migration-from-v1">10. Migration from v1</h2>
+
+<ul>
+  <li>v1 manifests (<code>transfer-manifest.json</code>) are recognized and processed by both Python and PowerShell components.</li>
+  <li>v1 config (<code>archiveRoot</code> key, absolute inbox paths) is auto-migrated to v2 format (<code>cabinetRoot</code> key, relative paths) on first load.</li>
+  <li>v1 PowerShell scripts (if present) are not modified but are superseded by <code>transfer-gate.ps1</code> modes.</li>
+  <li>Migration is automatic and non-destructive &mdash; v1 config keys are preserved alongside v2 keys.</li>
+</ul>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="file-inventory">11. File Inventory</h2>
+
+<table>
+  <thead>
+    <tr><th>File</th><th>Zone</th><th>Status</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>transfer-gate.html</code></td><td>Both</td><td>New (v2)</td></tr>
+    <tr><td><code>transfer-gate-server.py</code></td><td>Online</td><td>New (v2)</td></tr>
+    <tr><td><code>transfer-gate.ps1</code></td><td>Offline</td><td>Modified (v1 &rarr; v2)</td></tr>
+    <tr><td><code>transfer-gate.json</code></td><td>Both</td><td>Modified (new keys)</td></tr>
+    <tr><td><code>structure-rules.yaml</code></td><td>Both</td><td>New (v2)</td></tr>
+    <tr><td><code>offline-structure-manifest.json</code></td><td>USB/Both</td><td>Existing (v1)</td></tr>
+    <tr><td><code>transfer-manifest.json</code></td><td>USB</td><td>Existing (v1)</td></tr>
+    <tr><td><code>placement-manifest.json</code></td><td>USB</td><td>New (v2)</td></tr>
+    <tr><td><code>placement-receipt.json</code></td><td>USB</td><td>New (v2)</td></tr>
+  </tbody>
+</table>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="implementation-phases">12. Implementation Phases</h2>
+
+<table>
+  <thead>
+    <tr><th>Phase</th><th>Scope</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>P-1</strong></td><td>Core HTML UI shell &mdash; two-panel layout, mode detection, settings overlay. Cabinet path configuration.</td></tr>
+    <tr><td><strong>P-2</strong></td><td>Python backend &mdash; file listing, Cabinet tree loading, configuration API, batch staging.</td></tr>
+    <tr><td><strong>P-3</strong></td><td>AI classification &mdash; oMLX integration, suggestion display, accept/override/skip workflow.</td></tr>
+    <tr><td><strong>P-4</strong></td><td>PowerShell v2 &mdash; serve mode, place mode, enhanced verify mode, receipt generation.</td></tr>
+    <tr><td><strong>P-5</strong></td><td>Polish &mdash; conflict resolution UI, structure rules editor, v1 migration testing, UNC path support.</td></tr>
+  </tbody>
+</table>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<h2 id="risks-mitigations">13. Risks &amp; Mitigations</h2>
+
+<table>
+  <thead>
+    <tr><th>Risk</th><th>Impact</th><th>Likelihood</th><th>Mitigation</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>oMLX model quality poor</td><td>Low classification accuracy</td><td>Medium</td><td>Graceful fallback to manual; structure rules improve prompts</td></tr>
+    <tr><td>USB stick failure during transfer</td><td>Data loss for batch</td><td>Low</td><td>Checksums detect corruption; source files not deleted until receipt</td></tr>
+    <tr><td>Cabinet drive full</td><td>Placement fails</td><td>Low</td><td>Pre-check available space before placement</td></tr>
+    <tr><td>Browser compatibility issues</td><td>UI broken</td><td>Low</td><td>Target Chrome/Edge 90+ only; no exotic APIs</td></tr>
+    <tr><td>Large file slow SHA-256</td><td>Poor UX during verify</td><td>Medium</td><td>Progress reporting; chunked hashing</td></tr>
+    <tr><td>v1 config edge cases</td><td>Migration failure</td><td>Low</td><td>Comprehensive test coverage; preserve original config</td></tr>
+    <tr><td>PowerShell execution policy</td><td>Script won't run</td><td>Medium</td><td>Document <code>-ExecutionPolicy Bypass</code>; provide .bat launcher</td></tr>
+  </tbody>
+</table>
+
+<!-- ────────────────────────────────────────────────────────── -->
+<footer>Transfer Gate v2 Documentation</footer>
+
+</div><!-- .content-card -->
+</main>
+
+</body>
+</html>

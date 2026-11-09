@@ -1,0 +1,44 @@
+folders:
+  "00 Inbox":
+    description: "Incoming unsorted files — staging area"
+    accepts: ["*"]
+  "10 Finance":
+    description: "All financial documents"
+    accepts: ["pdf", "xlsx", "csv", "docx"]
+    naming: "YYYY-MM-DD Title (version)"
+    children:
+      "Banking":
+        description: "Bank statements, correspondence"
+      "Insurance":
+        description: "Insurance policies, claims, correspondence"
+      "Tax":
+        description: "Tax returns, assessments, correspondence"
+        children:
+          "*":
+            description: "Year subfolder, auto-created"
+      "Invoices":
+        description: "Invoices, receipts, billing"
+  "20 Legal":
+    description: "Legal documents"
+    accepts: ["pdf", "docx"]
+    naming: "YYYY-MM-DD Title (version)"
+    children:
+      "Contracts":
+        description: "Signed contracts, agreements"
+      "Filings":
+        description: "Court filings, registrations"
+  "30 Personal":
+    description: "Personal documents"
+    children:
+      "Medical":
+        description: "Medical records, prescriptions, insurance"
+        accepts: ["pdf", "jpg", "png"]
+      "Travel":
+        description: "Travel documents, bookings, visas"
+  "40 Business":
+    description: "Business-related documents"
+    children:
+      "Contracts":
+        description: "Business contracts, proposals"
+      "Marketing":
+        description: "Marketing materials, campaigns"

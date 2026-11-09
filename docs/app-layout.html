@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>App Layout Canvas -- Transfer Gate v2: UI Design &amp; Wireframe</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    line-height: 1.6;
+    font-size: 15px;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* -- Header bar --------------------------------------------------------- */
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  header h1 { font-size: 1.15rem; font-weight: 600; white-space: nowrap; }
+  header .subtitle { font-size: 0.82rem; color: #94a3b8; }
+
+  /* -- Sidebar navigation ------------------------------------------------- */
+  nav.sidebar {
+    position: fixed;
+    top: 52px;
+    left: 0;
+    bottom: 0;
+    width: 240px;
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 90;
+  }
+  nav.sidebar a {
+    display: block;
+    padding: 7px 20px;
+    color: #475569;
+    text-decoration: none;
+    font-size: 0.85rem;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  nav.sidebar a:hover,
+  nav.sidebar a:focus {
+    background: #f1f5f9;
+    color: #1e293b;
+    border-left-color: #3b82f6;
+  }
+  nav.sidebar a.active {
+    color: #3b82f6;
+    border-left-color: #3b82f6;
+    font-weight: 600;
+  }
+
+  /* -- Main content ------------------------------------------------------- */
+  main {
+    margin-left: 240px;
+    margin-top: 52px;
+    flex: 1;
+    padding: 32px;
+    display: flex;
+    justify-content: center;
+  }
+  .content-card {
+    background: #ffffff;
+    max-width: 960px;
+    width: 100%;
+    padding: 40px 48px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  }
+
+  /* -- Typography --------------------------------------------------------- */
+  h2 {
+    font-size: 22px;
+    border-bottom: 2px solid #3b82f6;
+    padding-bottom: 8px;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: #1e293b;
+  }
+  h2:first-child { margin-top: 0; }
+  h3 {
+    font-size: 18px;
+    color: #334155;
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 14px 24px; }
+  li { margin-bottom: 6px; }
+
+  a { color: #3b82f6; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  strong { font-weight: 600; }
+
+  .meta-block {
+    background: #f1f5f9;
+    border-left: 4px solid #3b82f6;
+    padding: 12px 18px;
+    margin-bottom: 28px;
+    font-size: 0.92rem;
+    color: #475569;
+  }
+
+  .info-box {
+    border-left: 4px solid #3b82f6;
+    background: #eff6ff;
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    margin: 16px 0 20px;
+  }
+
+  /* -- Tables ------------------------------------------------------------- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 0.9rem;
+  }
+  thead th {
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+
+  /* -- Code blocks -------------------------------------------------------- */
+  code {
+    font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 13px;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 14px 0 20px;
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* -- Footer ------------------------------------------------------------- */
+  footer {
+    text-align: center;
+    font-size: 13px;
+    color: #94a3b8;
+    padding: 24px 0 20px;
+    margin-top: 48px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  /* -- Wireframe styles --------------------------------------------------- */
+  .wireframe {
+    background: #f9fafb;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0;
+    margin: 20px 0 28px;
+    overflow: hidden;
+    font-size: 12px;
+    color: #64748b;
+  }
+  .wireframe * { box-sizing: border-box; }
+
+  .wf-header {
+    background: #334155;
+    color: #cbd5e1;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    border-bottom: 2px solid #475569;
+  }
+  .wf-header .wf-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .wf-header .wf-dot.green { background: #22c55e; }
+  .wf-header .wf-dot.amber { background: #f59e0b; }
+  .wf-header .wf-dot.grey  { background: #94a3b8; }
+  .wf-header .wf-title {
+    font-weight: 700;
+    color: #f1f5f9;
+    font-size: 13px;
+  }
+  .wf-header .wf-mode {
+    color: #94a3b8;
+    font-size: 11px;
+  }
+  .wf-header .wf-cabinet {
+    color: #86efac;
+    font-size: 11px;
+  }
+  .wf-header .wf-spacer { flex: 1; }
+  .wf-header .wf-btn {
+    background: #475569;
+    color: #cbd5e1;
+    border: 1px solid #64748b;
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-size: 11px;
+    cursor: default;
+  }
+
+  .wf-body {
+    display: flex;
+    min-height: 260px;
+  }
+  .wf-panel {
+    flex: 1;
+    border-right: 1px dashed #cbd5e1;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .wf-panel:last-child { border-right: none; }
+  .wf-panel-header {
+    font-weight: 700;
+    font-size: 12px;
+    color: #475569;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .wf-badge {
+    background: #e2e8f0;
+    color: #475569;
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .wf-badge.green { background: #dcfce7; color: #166534; }
+  .wf-badge.blue  { background: #dbeafe; color: #1e40af; }
+  .wf-badge.amber { background: #fef3c7; color: #92400e; }
+  .wf-badge.red   { background: #fee2e2; color: #991b1b; }
+  .wf-badge.grey  { background: #f1f5f9; color: #64748b; }
+
+  .wf-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .wf-card.state-accepted  { border-left: 4px solid #22c55e; }
+  .wf-card.state-overridden { border-left: 4px solid #3b82f6; }
+  .wf-card.state-skipped   { border-left: 4px solid #94a3b8; opacity: 0.6; }
+  .wf-card.state-conflict  { border-left: 4px solid #ef4444; }
+  .wf-card.state-pending   { border-left: 4px solid #e2e8f0; }
+
+  .wf-card .wf-filename { font-weight: 700; color: #1e293b; font-size: 12px; }
+  .wf-card .wf-meta { color: #94a3b8; font-size: 10px; margin-top: 2px; }
+  .wf-card .wf-suggestion {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .wf-card .wf-suggestion.high { background: #dbeafe; color: #1e40af; }
+  .wf-card .wf-suggestion.medium { background: #fef3c7; color: #92400e; }
+  .wf-card .wf-suggestion.low { background: #f1f5f9; color: #64748b; }
+  .wf-card .wf-actions {
+    margin-top: 6px;
+    display: flex;
+    gap: 4px;
+  }
+  .wf-card .wf-actions span {
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: default;
+  }
+  .wf-card .wf-actions .act-accept { background: #dcfce7; color: #166534; }
+  .wf-card .wf-actions .act-skip   { background: #f1f5f9; color: #64748b; }
+  .wf-card .wf-actions .act-override { background: #dbeafe; color: #1e40af; }
+
+  .wf-tree-item {
+    padding: 3px 0 3px 14px;
+    border-left: 1px solid #e2e8f0;
+    font-size: 11px;
+    color: #475569;
+  }
+  .wf-tree-item.highlight { background: #eff6ff; border-left-color: #3b82f6; }
+  .wf-tree-icon { margin-right: 4px; }
+
+  .wf-action-bar {
+    background: #f1f5f9;
+    border-top: 2px solid #cbd5e1;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #475569;
+  }
+  .wf-action-bar .wf-stats { display: flex; gap: 12px; }
+  .wf-action-bar .wf-stat {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .wf-action-bar .wf-primary-btn {
+    background: #3b82f6;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 6px 18px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: default;
+  }
+  .wf-action-bar .wf-secondary-btn {
+    background: #e2e8f0;
+    color: #475569;
+    border: none;
+    border-radius: 5px;
+    padding: 6px 14px;
+    font-size: 12px;
+    cursor: default;
+    margin-right: 8px;
+  }
+  .wf-action-buttons { display: flex; align-items: center; }
+
+  /* -- Wireframe: Settings overlay ---------------------------------------- */
+  .wf-overlay-backdrop {
+    background: rgba(30, 41, 59, 0.25);
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 24px;
+    margin: 20px 0 28px;
+    display: flex;
+    justify-content: center;
+  }
+  .wf-overlay {
+    background: #ffffff;
+    border: 2px solid #94a3b8;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 560px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    overflow: hidden;
+  }
+  .wf-overlay-header {
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .wf-overlay-header .wf-close {
+    color: #94a3b8;
+    cursor: default;
+    font-size: 16px;
+  }
+  .wf-overlay-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    font-size: 12px;
+    color: #475569;
+  }
+  .wf-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .wf-field label {
+    font-weight: 600;
+    font-size: 12px;
+    color: #334155;
+  }
+  .wf-field .wf-input {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: #64748b;
+    background: #f8fafc;
+  }
+  .wf-field .wf-input.valid { border-color: #22c55e; }
+  .wf-field .wf-textarea {
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 11px;
+    font-family: monospace;
+    color: #64748b;
+    background: #f8fafc;
+    min-height: 60px;
+    line-height: 1.5;
+  }
+  .wf-field .wf-hint {
+    font-size: 10px;
+    color: #94a3b8;
+  }
+  .wf-overlay-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+  .wf-overlay-footer .wf-btn-save {
+    background: #3b82f6;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    padding: 6px 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: default;
+  }
+  .wf-overlay-footer .wf-btn-cancel {
+    background: #e2e8f0;
+    color: #475569;
+    border: none;
+    border-radius: 5px;
+    padding: 6px 16px;
+    font-size: 12px;
+    cursor: default;
+  }
+
+  /* -- Wireframe: verification icons -------------------------------------- */
+  .wf-verify { display: inline-block; width: 14px; text-align: center; font-weight: 700; font-size: 12px; }
+  .wf-verify.pass  { color: #22c55e; }
+  .wf-verify.fail  { color: #ef4444; }
+  .wf-verify.wait  { color: #94a3b8; }
+
+  /* -- Search bar wireframe ----------------------------------------------- */
+  .wf-search {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 11px;
+    color: #94a3b8;
+    width: 100%;
+  }
+
+  /* -- Responsive --------------------------------------------------------- */
+  @media (max-width: 768px) {
+    nav.sidebar { display: none; }
+    main { margin-left: 0; }
+    .content-card { padding: 24px 18px; }
+    .wf-body { flex-direction: column; }
+    .wf-panel { border-right: none; border-bottom: 1px dashed #cbd5e1; }
+    .wf-panel:last-child { border-bottom: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================================================================== -->
+<!-- Header                                                             -->
+<!-- ================================================================== -->
+<header>
+  <h1>App Layout Canvas &mdash; Transfer Gate v2</h1>
+  <span class="subtitle">UI Design &amp; Wireframe</span>
+</header>
+
+<!-- ================================================================== -->
+<!-- Sidebar Navigation                                                 -->
+<!-- ================================================================== -->
+<nav class="sidebar">
+  <a href="#layout-philosophy">1. Layout Philosophy</a>
+  <a href="#shared-shell">2. Shared Shell</a>
+  <a href="#online-mode">3. Online Mode &mdash; Sort &amp; Stage</a>
+  <a href="#offline-mode">4. Offline Mode &mdash; Verify &amp; Place</a>
+  <a href="#settings-overlay">5. Settings Overlay</a>
+</nav>
+
+<!-- ================================================================== -->
+<!-- Main Content                                                       -->
+<!-- ================================================================== -->
+<main>
+<div class="content-card">
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Section 1: Layout Philosophy                                       -->
+<!-- ------------------------------------------------------------------ -->
+<h2 id="layout-philosophy">1. Layout Philosophy</h2>
+
+<p>Transfer Gate v2 uses a purpose-built layout designed around the core workflow of triaging unsorted files into a structured Cabinet. Every design decision serves one goal: <strong>reduce friction between seeing a file and deciding where it goes</strong>.</p>
+
+<ul>
+  <li><strong>Two-panel core.</strong> The left panel shows source content (unsorted files or batch files); the right panel shows the destination Cabinet tree. This follows a <em>"sort left, file right"</em> mental model &mdash; the eye scans left-to-right, matching the decision flow from "what is this?" to "where does it belong?"</li>
+  <li><strong>Bottom action bar.</strong> Primary action buttons and summary statistics live in a persistent bar anchored to the bottom of the viewport. The user never needs to scroll to act.</li>
+  <li><strong>Top status bar (header).</strong> Displays the current mode (Online/Offline), Cabinet path, connection status, and configuration access. Provides constant orientation.</li>
+  <li><strong>No scrolling to act.</strong> All primary actions (Accept, Skip, Stage Batch, Place Files) are always visible without scrolling. Only the file list and tree scroll.</li>
+  <li><strong>Single HTML file.</strong> The entire UI ships as one self-contained HTML file that adapts its panels and controls depending on whether the app is running online or offline.</li>
+  <li><strong>"Sort left, file right" mental model.</strong> The left panel is always the working area (files to process), the right panel is always the reference area (where things go). This stays consistent across both modes.</li>
+</ul>
+
+<div class="info-box">
+  <strong>Design principle:</strong> The interface should feel like sorting physical papers on a desk &mdash; the unsorted pile on the left, the filing cabinet on the right, and a workspace in between. Every interaction moves something from left to right.
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Section 2: Shared Shell                                            -->
+<!-- ------------------------------------------------------------------ -->
+<h2 id="shared-shell">2. Shared Shell</h2>
+
+<p>The shell wraps both online and offline modes with consistent chrome. It provides persistent orientation (mode, status, Cabinet path) and access to configuration, while the inner panels swap depending on the active mode.</p>
+
+<h3>Header Bar</h3>
+
+<p>The header bar stretches across the full viewport width and contains, from left to right:</p>
+
+<table>
+  <thead>
+    <tr><th>Element</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Status dot</strong></td><td>Green = online (server reachable), Amber = offline (no server), Grey = detecting connection</td></tr>
+    <tr><td><strong>App title</strong></td><td>Fixed text: "Transfer Gate"</td></tr>
+    <tr><td><strong>Mode label</strong></td><td>Dynamic text, e.g., "Online &mdash; Sort &amp; Stage" or "Offline &mdash; Verify &amp; Place"</td></tr>
+    <tr><td><strong>Cabinet path</strong></td><td>Displays the configured Cabinet root with validation indicator (green checkmark if valid, red X if invalid/missing)</td></tr>
+    <tr><td><strong>Spacer</strong></td><td>Flexible space pushing remaining elements to the right</td></tr>
+    <tr><td><strong>Config button</strong></td><td>Gear icon; opens the Settings overlay</td></tr>
+    <tr><td><strong>Mode dropdown</strong></td><td>Manual override to switch between Online and Offline modes</td></tr>
+  </tbody>
+</table>
+
+<h3>Action Bar</h3>
+
+<p>The action bar is anchored to the bottom of the viewport. It contains:</p>
+
+<ul>
+  <li><strong>Left side &mdash; summary stats:</strong> Running counts of file states, e.g., <code>12 pending | 5 accepted | 2 skipped | 1 conflict</code></li>
+  <li><strong>Right side &mdash; action buttons:</strong>
+    <ul>
+      <li>Primary: <strong>"Stage Batch"</strong> (online mode) or <strong>"Place Files"</strong> (offline mode)</li>
+      <li>Secondary: <strong>"Skip All Remaining"</strong>, <strong>"Export Structure"</strong></li>
+    </ul>
+  </li>
+</ul>
+
+<h3>Shared Shell Wireframe</h3>
+
+<!-- WIREFRAME: Shared Shell -->
+<div class="wireframe">
+  <div class="wf-header">
+    <div class="wf-dot green" title="Online"></div>
+    <span class="wf-title">Transfer Gate</span>
+    <span class="wf-mode">Online &mdash; Sort &amp; Stage</span>
+    <span class="wf-cabinet">Cabinet: D:\Archive &#10003;</span>
+    <span class="wf-spacer"></span>
+    <span class="wf-btn">&#9881; Config</span>
+    <span class="wf-btn">Mode &#9662;</span>
+  </div>
+  <div class="wf-body" style="min-height: 180px;">
+    <div class="wf-panel" style="background: #f1f5f9;">
+      <div class="wf-panel-header">Left Panel <span class="wf-badge">Source</span></div>
+      <div style="flex:1; display:flex; align-items:center; justify-content:center; border: 2px dashed #cbd5e1; border-radius: 6px; color: #94a3b8; font-size: 13px; text-align:center; padding: 20px;">
+        Unsorted files (Online)<br>or Batch files (Offline)
+      </div>
+    </div>
+    <div class="wf-panel" style="background: #f1f5f9;">
+      <div class="wf-panel-header">Right Panel <span class="wf-badge">Destination</span></div>
+      <div style="flex:1; display:flex; align-items:center; justify-content:center; border: 2px dashed #cbd5e1; border-radius: 6px; color: #94a3b8; font-size: 13px; text-align:center; padding: 20px;">
+        Cabinet tree (Online)<br>or Placement preview (Offline)
+      </div>
+    </div>
+  </div>
+  <div class="wf-action-bar">
+    <div class="wf-stats">
+      <span class="wf-stat">12 pending</span>
+      <span class="wf-stat" style="color:#166534;">5 accepted</span>
+      <span class="wf-stat" style="color:#94a3b8;">2 skipped</span>
+      <span class="wf-stat" style="color:#ef4444;">1 conflict</span>
+    </div>
+    <div class="wf-action-buttons">
+      <span class="wf-secondary-btn">Skip All Remaining</span>
+      <span class="wf-primary-btn">Stage Batch</span>
+    </div>
+  </div>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Section 3: Online Mode                                             -->
+<!-- ------------------------------------------------------------------ -->
+<h2 id="online-mode">3. Online Mode &mdash; Sort &amp; Stage</h2>
+
+<p>Online mode is the primary workflow. The server is reachable, AI suggestions are available, and the user triages files one by one (or in bulk) before staging a batch for later offline placement.</p>
+
+<h3>Left Panel: Unsorted Files</h3>
+
+<ul>
+  <li><strong>Panel header:</strong> "Unsorted Files" with a count badge (e.g., <span class="wf-badge">24 files</span>)</li>
+  <li><strong>Search/filter bar:</strong> Sits below the panel header. Allows filtering by filename, extension, or suggestion status.</li>
+  <li><strong>Scrollable file card list:</strong> Each file is a self-contained card with all decision controls inline.</li>
+</ul>
+
+<h3>File Card Anatomy</h3>
+
+<p>Each file card is a self-contained decision unit containing the following elements, top to bottom:</p>
+
+<ol>
+  <li><strong>Original filename</strong> &mdash; Bold, truncated with ellipsis if longer than the card width.</li>
+  <li><strong>File metadata row</strong> &mdash; Extension badge (color-coded by file type), file size, last modified date.</li>
+  <li><strong>AI suggestion badge</strong> &mdash; Shows the suggested destination folder path with a confidence indicator (e.g., "10 Finance/Tax &mdash; 87%").
+    <ul>
+      <li>Blue badge if confidence &gt; 70% (high)</li>
+      <li>Amber badge if confidence 40&ndash;70% (medium)</li>
+      <li>Grey badge if confidence &lt; 40% or unavailable (low)</li>
+    </ul>
+  </li>
+  <li><strong>Destination dropdown</strong> &mdash; Pre-filled with the AI suggestion. Opens the full Cabinet tree for manual override.</li>
+  <li><strong>Rename field</strong> &mdash; Text input pre-filled with the suggested name. If the name is unchanged from the original, the field shows a highlighted (amber) border as a mandatory rename indicator.</li>
+  <li><strong>Decision buttons row</strong> &mdash; <span style="color:#166534;">Accept</span> (green), <span style="color:#64748b;">Skip</span> (grey), <span style="color:#1e40af;">Override</span> (blue, shown when the user changes the destination from the AI suggestion).</li>
+</ol>
+
+<h3>File Card States</h3>
+
+<table>
+  <thead>
+    <tr><th>State</th><th>Visual Indicator</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Pending</strong></td><td>Default card styling, no border highlight</td></tr>
+    <tr><td><strong>Accepted</strong></td><td>Green left border, green checkmark icon, muted (non-interactive) controls</td></tr>
+    <tr><td><strong>Overridden</strong></td><td>Blue left border, blue checkmark icon, original AI suggestion shown struck through</td></tr>
+    <tr><td><strong>Skipped</strong></td><td>Grey left border, grey styling, card collapses to single line</td></tr>
+    <tr><td><strong>Conflict</strong></td><td>Red left border, red warning icon, conflict detail message shown</td></tr>
+  </tbody>
+</table>
+
+<h3>Right Panel: Cabinet Tree</h3>
+
+<ul>
+  <li><strong>Panel header:</strong> "Cabinet" with folder count badge</li>
+  <li><strong>Tree view:</strong> Hierarchical folder listing with expand/collapse toggles</li>
+  <li>Each folder shows: name, file count badge, accepted file types (from structure rules)</li>
+  <li>Folders with pending file assignments are highlighted with a blue background</li>
+  <li>Drop target highlighting when dragging files (future enhancement)</li>
+</ul>
+
+<h3>Online Mode Wireframe</h3>
+
+<!-- WIREFRAME: Online Mode -->
+<div class="wireframe">
+  <div class="wf-header">
+    <div class="wf-dot green"></div>
+    <span class="wf-title">Transfer Gate</span>
+    <span class="wf-mode">Online &mdash; Sort &amp; Stage</span>
+    <span class="wf-cabinet">Cabinet: D:\Archive &#10003;</span>
+    <span class="wf-spacer"></span>
+    <span class="wf-btn">&#9881;</span>
+    <span class="wf-btn">Online &#9662;</span>
+  </div>
+  <div class="wf-body" style="min-height: 420px;">
+    <!-- Left Panel: Unsorted Files -->
+    <div class="wf-panel">
+      <div class="wf-panel-header">Unsorted Files <span class="wf-badge">24 files</span></div>
+      <div class="wf-search">&#128269; Search or filter files...</div>
+
+      <!-- Card 1: Accepted -->
+      <div class="wf-card state-accepted">
+        <div class="wf-filename">&#10003; 2026-Annual-Report-LAWCENTER.pdf</div>
+        <div class="wf-meta">
+          <span class="wf-badge" style="background:#dbeafe; color:#1e40af;">PDF</span>
+          2.4 MB &middot; Modified 2026-06-08
+        </div>
+        <div>
+          <span class="wf-suggestion high">10 Finance/Tax &mdash; 87%</span>
+        </div>
+        <div class="wf-meta" style="margin-top:4px;">Dest: 10 Finance/Tax &middot; Renamed: 2026 Annual Report - Law Center.pdf</div>
+        <div class="wf-actions">
+          <span class="act-accept">&#10003; Accepted</span>
+        </div>
+      </div>
+
+      <!-- Card 2: Pending (medium confidence) -->
+      <div class="wf-card state-pending">
+        <div class="wf-filename">260628_001.mp3</div>
+        <div class="wf-meta">
+          <span class="wf-badge" style="background:#fef3c7; color:#92400e;">MP3</span>
+          18.7 MB &middot; Modified 2026-06-28
+        </div>
+        <div>
+          <span class="wf-suggestion medium">40 Media/Audio &mdash; 52%</span>
+        </div>
+        <div class="wf-meta" style="margin-top:4px;">
+          <span style="border:1px solid #f59e0b; border-radius:3px; padding:1px 6px; font-size:10px; color:#92400e;">Rename required</span>
+        </div>
+        <div class="wf-actions">
+          <span class="act-accept">Accept</span>
+          <span class="act-skip">Skip</span>
+        </div>
+      </div>
+
+      <!-- Card 3: Skipped -->
+      <div class="wf-card state-skipped">
+        <div class="wf-filename">.DS_Store</div>
+        <div class="wf-meta">
+          <span class="wf-badge grey">SYS</span>
+          4 KB &middot; Skipped (excluded pattern)
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Cabinet Tree -->
+    <div class="wf-panel">
+      <div class="wf-panel-header">Cabinet <span class="wf-badge">6 folders</span></div>
+      <div style="padding-top: 4px;">
+        <div class="wf-tree-item" style="font-weight:700; padding-left:0;">
+          &#128193; D:\Archive
+        </div>
+        <div class="wf-tree-item highlight">
+          <span class="wf-tree-icon">&#128194;</span> 10 Finance
+          <span class="wf-badge blue">2 pending</span>
+          <div class="wf-tree-item highlight">
+            <span class="wf-tree-icon">&#128196;</span> Tax
+            <span class="wf-badge green">1 accepted</span>
+          </div>
+          <div class="wf-tree-item">
+            <span class="wf-tree-icon">&#128196;</span> Banking
+          </div>
+          <div class="wf-tree-item">
+            <span class="wf-tree-icon">&#128196;</span> Insurance
+          </div>
+        </div>
+        <div class="wf-tree-item">
+          <span class="wf-tree-icon">&#128194;</span> 20 Legal
+          <div class="wf-tree-item">
+            <span class="wf-tree-icon">&#128196;</span> Contracts
+          </div>
+          <div class="wf-tree-item">
+            <span class="wf-tree-icon">&#128196;</span> Registrations
+          </div>
+        </div>
+        <div class="wf-tree-item">
+          <span class="wf-tree-icon">&#128194;</span> 30 Business
+          <div class="wf-tree-item">
+            <span class="wf-tree-icon">&#128196;</span> Plans
+          </div>
+          <div class="wf-tree-item">
+            <span class="wf-tree-icon">&#128196;</span> Pitch Decks
+          </div>
+        </div>
+        <div class="wf-tree-item highlight">
+          <span class="wf-tree-icon">&#128194;</span> 40 Media
+          <span class="wf-badge blue">1 pending</span>
+          <div class="wf-tree-item">
+            <span class="wf-tree-icon">&#128196;</span> Audio
+          </div>
+          <div class="wf-tree-item">
+            <span class="wf-tree-icon">&#128196;</span> Video
+          </div>
+          <div class="wf-tree-item">
+            <span class="wf-tree-icon">&#128196;</span> Images
+          </div>
+        </div>
+        <div class="wf-tree-item">
+          <span class="wf-tree-icon">&#128194;</span> 50 Personal
+        </div>
+        <div class="wf-tree-item">
+          <span class="wf-tree-icon">&#128194;</span> 60 Reference
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="wf-action-bar">
+    <div class="wf-stats">
+      <span class="wf-stat">21 pending</span>
+      <span class="wf-stat" style="color:#166534;">&#10003; 1 accepted</span>
+      <span class="wf-stat" style="color:#94a3b8;">1 skipped</span>
+      <span class="wf-stat" style="color:#ef4444;">0 conflicts</span>
+    </div>
+    <div class="wf-action-buttons">
+      <span class="wf-secondary-btn">Skip All Remaining</span>
+      <span class="wf-secondary-btn">Export Structure</span>
+      <span class="wf-primary-btn">Stage Batch</span>
+    </div>
+  </div>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Section 4: Offline Mode                                            -->
+<!-- ------------------------------------------------------------------ -->
+<h2 id="offline-mode">4. Offline Mode &mdash; Verify &amp; Place</h2>
+
+<p>Offline mode is the execution phase. The USB/disk has been transported to the Cabinet machine. The app loads the placement manifest, verifies file integrity, and places files into the Cabinet tree.</p>
+
+<h3>Left Panel: Batch Files</h3>
+
+<ul>
+  <li><strong>Panel header:</strong> "Batch: batch-20261107-143022" with file count</li>
+  <li><strong>Batch selector:</strong> Dropdown for choosing between multiple batches if the inbox contains more than one</li>
+  <li><strong>File list:</strong> Each file card shows its verification status and placement details</li>
+</ul>
+
+<p>Verification status icons:</p>
+<table>
+  <thead>
+    <tr><th>Icon</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><span style="color:#22c55e; font-weight:700;">&#10003;</span> Green checkmark</td><td>Verified &mdash; SHA-256 checksum matches the manifest</td></tr>
+    <tr><td><span style="color:#ef4444; font-weight:700;">&#10007;</span> Red X</td><td>Failed &mdash; checksum mismatch, file may be corrupt or tampered</td></tr>
+    <tr><td><span style="color:#94a3b8;">&#9679;</span> Grey spinner</td><td>Verification in progress</td></tr>
+    <tr><td><span style="color:#94a3b8;">&mdash;</span> Grey dash</td><td>Not yet checked (queued)</td></tr>
+  </tbody>
+</table>
+
+<p>Each file card in offline mode displays:</p>
+<ol>
+  <li><strong>Renamed filename</strong> &mdash; The new name from the placement manifest (bold)</li>
+  <li><strong>Original filename</strong> &mdash; Shown smaller and muted beneath the renamed name</li>
+  <li><strong>Destination path</strong> &mdash; Full Cabinet path where the file will be placed</li>
+  <li><strong>Verification status</strong> &mdash; Icon and SHA-256 match/mismatch detail</li>
+  <li><strong>File size</strong> &mdash; Displayed for quick reference</li>
+</ol>
+
+<h3>Right Panel: Placement Preview</h3>
+
+<ul>
+  <li><strong>Panel header:</strong> "Placement Preview"</li>
+  <li>Shows the Cabinet tree with destination folders highlighted</li>
+  <li>Each highlighted folder shows the count of files about to be placed into it</li>
+  <li>Conflict indicators appear on folders where naming or path conflicts exist</li>
+  <li>Expanding a folder reveals individual file placement entries</li>
+</ul>
+
+<h3>Offline Mode Wireframe</h3>
+
+<!-- WIREFRAME: Offline Mode -->
+<div class="wireframe">
+  <div class="wf-header">
+    <div class="wf-dot amber"></div>
+    <span class="wf-title">Transfer Gate</span>
+    <span class="wf-mode">Offline &mdash; Verify &amp; Place</span>
+    <span class="wf-cabinet">Cabinet: D:\Archive &#10003;</span>
+    <span class="wf-spacer"></span>
+    <span class="wf-btn">&#9881;</span>
+    <span class="wf-btn">Offline &#9662;</span>
+  </div>
+  <div class="wf-body" style="min-height: 380px;">
+    <!-- Left Panel: Batch Files -->
+    <div class="wf-panel">
+      <div class="wf-panel-header">Batch: batch-20261107-143022 <span class="wf-badge">5 files</span></div>
+      <div class="wf-search">Batch: &#9662; batch-20261107-143022</div>
+
+      <!-- File 1: Verified -->
+      <div class="wf-card state-accepted">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="wf-verify pass">&#10003;</span>
+          <span class="wf-filename">2026 Annual Report - Law Center.pdf</span>
+        </div>
+        <div class="wf-meta">Originally: 2026-Annual-Report-LAWCENTER.pdf</div>
+        <div class="wf-meta">Dest: 10 Finance/Tax/ &middot; 2.4 MB</div>
+        <div class="wf-meta" style="color:#22c55e;">SHA-256 verified &#10003;</div>
+      </div>
+
+      <!-- File 2: Verified -->
+      <div class="wf-card state-accepted">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="wf-verify pass">&#10003;</span>
+          <span class="wf-filename">2026-06-28 Recording Session.mp3</span>
+        </div>
+        <div class="wf-meta">Originally: 260628_001.mp3</div>
+        <div class="wf-meta">Dest: 40 Media/Audio/ &middot; 18.7 MB</div>
+        <div class="wf-meta" style="color:#22c55e;">SHA-256 verified &#10003;</div>
+      </div>
+
+      <!-- File 3: Failed -->
+      <div class="wf-card state-conflict">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="wf-verify fail">&#10007;</span>
+          <span class="wf-filename">Company Registration Extract.pdf</span>
+        </div>
+        <div class="wf-meta">Originally: Register1.pdf</div>
+        <div class="wf-meta">Dest: 20 Legal/Registrations/ &middot; 1.1 MB</div>
+        <div class="wf-meta" style="color:#ef4444;">SHA-256 mismatch &mdash; expected a3f8...c201, got 7b21...e490</div>
+      </div>
+
+      <!-- File 4: In progress -->
+      <div class="wf-card state-pending">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="wf-verify wait">&#9679;</span>
+          <span class="wf-filename">Business Plan Template.pdf</span>
+        </div>
+        <div class="wf-meta">Originally: Business Plan Template 1 (1).pdf</div>
+        <div class="wf-meta">Dest: 30 Business/Plans/ &middot; 890 KB</div>
+        <div class="wf-meta" style="color:#94a3b8;">Verifying...</div>
+      </div>
+
+      <!-- File 5: Queued -->
+      <div class="wf-card state-pending">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="wf-verify wait">&mdash;</span>
+          <span class="wf-filename">IoMarkets UG Valuation Summary.pdf</span>
+        </div>
+        <div class="wf-meta">Originally: IoMarkets.io_V.pdf</div>
+        <div class="wf-meta">Dest: 30 Business/Plans/ &middot; 3.2 MB</div>
+        <div class="wf-meta" style="color:#94a3b8;">Queued</div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Placement Preview -->
+    <div class="wf-panel">
+      <div class="wf-panel-header">Placement Preview</div>
+      <div style="padding-top: 4px;">
+        <div class="wf-tree-item" style="font-weight:700; padding-left:0;">
+          &#128193; D:\Archive
+        </div>
+        <div class="wf-tree-item highlight">
+          <span class="wf-tree-icon">&#128194;</span> 10 Finance
+          <div class="wf-tree-item highlight">
+            <span class="wf-tree-icon">&#128196;</span> Tax
+            <span class="wf-badge green">1 file</span>
+            <div style="padding: 4px 0 2px 18px; font-size:10px; color:#64748b;">
+              &#8627; 2026 Annual Report - Law Center.pdf
+            </div>
+          </div>
+        </div>
+        <div class="wf-tree-item" style="border-left-color:#ef4444;">
+          <span class="wf-tree-icon">&#128194;</span> 20 Legal
+          <div class="wf-tree-item" style="border-left-color:#ef4444;">
+            <span class="wf-tree-icon">&#128196;</span> Registrations
+            <span class="wf-badge red">1 file &#9888;</span>
+            <div style="padding: 4px 0 2px 18px; font-size:10px; color:#ef4444;">
+              &#8627; Company Registration Extract.pdf (checksum failed)
+            </div>
+          </div>
+        </div>
+        <div class="wf-tree-item highlight">
+          <span class="wf-tree-icon">&#128194;</span> 30 Business
+          <div class="wf-tree-item highlight">
+            <span class="wf-tree-icon">&#128196;</span> Plans
+            <span class="wf-badge blue">2 files</span>
+            <div style="padding: 4px 0 2px 18px; font-size:10px; color:#64748b;">
+              &#8627; Business Plan Template.pdf<br>
+              &#8627; IoMarkets UG Valuation Summary.pdf
+            </div>
+          </div>
+        </div>
+        <div class="wf-tree-item highlight">
+          <span class="wf-tree-icon">&#128194;</span> 40 Media
+          <div class="wf-tree-item highlight">
+            <span class="wf-tree-icon">&#128196;</span> Audio
+            <span class="wf-badge green">1 file</span>
+            <div style="padding: 4px 0 2px 18px; font-size:10px; color:#64748b;">
+              &#8627; 2026-06-28 Recording Session.mp3
+            </div>
+          </div>
+        </div>
+        <div class="wf-tree-item">
+          <span class="wf-tree-icon">&#128194;</span> 50 Personal
+        </div>
+        <div class="wf-tree-item">
+          <span class="wf-tree-icon">&#128194;</span> 60 Reference
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="wf-action-bar">
+    <div class="wf-stats">
+      <span class="wf-stat" style="color:#166534;">&#10003; 2 verified</span>
+      <span class="wf-stat" style="color:#ef4444;">&#10007; 1 failed</span>
+      <span class="wf-stat" style="color:#94a3b8;">&#9679; 1 in progress</span>
+      <span class="wf-stat" style="color:#94a3b8;">&mdash; 1 queued</span>
+    </div>
+    <div class="wf-action-buttons">
+      <span class="wf-secondary-btn">Export Structure</span>
+      <span class="wf-primary-btn">Place Files (4 of 5)</span>
+    </div>
+  </div>
+</div>
+
+<div class="info-box">
+  <strong>Note:</strong> The "Place Files" button label dynamically reflects how many files are eligible for placement. Files with failed verification are excluded from the count and require manual resolution.
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Section 5: Settings Overlay                                        -->
+<!-- ------------------------------------------------------------------ -->
+<h2 id="settings-overlay">5. Settings Overlay</h2>
+
+<p>The settings overlay is a modal dialog that appears centered over the main content with a semi-transparent backdrop. It provides access to all configuration options without leaving the current workflow context.</p>
+
+<h3>Settings Fields</h3>
+
+<table>
+  <thead>
+    <tr><th>#</th><th>Field</th><th>Type</th><th>Description</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td><strong>Cabinet Root Path</strong></td>
+      <td>Text input + Browse button</td>
+      <td>Filesystem path to the Cabinet root. Shows validation status: green check = valid path, red X = invalid or missing.</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>oMLX Endpoint</strong></td>
+      <td>Text input</td>
+      <td>URL of the local oMLX server (default: <code>http://localhost:8000/v1</code>). Shows connection status indicator.</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>Server Port</strong></td>
+      <td>Number input</td>
+      <td>Port for the Transfer Gate server (default: <code>8080</code>).</td>
+    </tr>
+    <tr>
+      <td>4</td>
+      <td><strong>Media File Naming Rule</strong></td>
+      <td>Text input + preview</td>
+      <td>Template syntax for renaming media files, e.g., <code>{date} {title}</code>. A live preview shows the applied result.</td>
+    </tr>
+    <tr>
+      <td>5</td>
+      <td><strong>Structure Rules Editor</strong></td>
+      <td>Textarea (monospace)</td>
+      <td>Embedded YAML editor for <code>structure-rules.yaml</code> content. Monospace font, no syntax highlighting required.</td>
+    </tr>
+    <tr>
+      <td>6</td>
+      <td><strong>Exclude Patterns</strong></td>
+      <td>Editable list</td>
+      <td>Filename patterns to auto-skip (e.g., <code>.DS_Store</code>, <code>@eaDir</code>, <code>Thumbs.db</code>).</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The overlay footer contains <strong>Save</strong> and <strong>Cancel</strong> buttons.</p>
+
+<h3>Settings Overlay Wireframe</h3>
+
+<!-- WIREFRAME: Settings Overlay -->
+<div class="wf-overlay-backdrop">
+  <div class="wf-overlay">
+    <div class="wf-overlay-header">
+      <span>Settings</span>
+      <span class="wf-close">&#10005;</span>
+    </div>
+    <div class="wf-overlay-body">
+      <div class="wf-field">
+        <label>Cabinet Root Path</label>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <div class="wf-input valid" style="flex:1;">D:\Archive</div>
+          <span class="wf-btn" style="font-size:11px; padding:5px 10px; background:#e2e8f0; border:1px solid #cbd5e1; border-radius:4px; color:#475569;">Browse</span>
+          <span style="color:#22c55e; font-weight:700;">&#10003;</span>
+        </div>
+      </div>
+
+      <div class="wf-field">
+        <label>oMLX Endpoint</label>
+        <div style="display:flex; gap:6px; align-items:center;">
+          <div class="wf-input" style="flex:1;">http://localhost:8000/v1</div>
+          <span style="color:#22c55e; font-size:10px;">Connected</span>
+        </div>
+      </div>
+
+      <div class="wf-field">
+        <label>Server Port</label>
+        <div class="wf-input" style="width:100px;">8080</div>
+      </div>
+
+      <div class="wf-field">
+        <label>Media File Naming Rule</label>
+        <div class="wf-input">{date} {title}</div>
+        <div class="wf-hint">Preview: "2026-06-28 Recording Session.mp3"</div>
+      </div>
+
+      <div class="wf-field">
+        <label>Structure Rules (YAML)</label>
+        <div class="wf-textarea">
+folders:<br>
+&nbsp;&nbsp;10 Finance:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;accept: [pdf, xlsx, csv, docx]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;children: [Tax, Banking, Insurance]<br>
+&nbsp;&nbsp;20 Legal:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;accept: [pdf, docx]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;children: [Contracts, Registrations]<br>
+&nbsp;&nbsp;30 Business:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;accept: [pdf, pptx, docx]<br>
+&nbsp;&nbsp;40 Media:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;accept: [mp3, mp4, jpg, png]
+        </div>
+      </div>
+
+      <div class="wf-field">
+        <label>Exclude Patterns</label>
+        <div class="wf-input">.DS_Store, @eaDir, Thumbs.db, desktop.ini, .git</div>
+        <div class="wf-hint">Comma-separated list of filename patterns to auto-skip</div>
+      </div>
+    </div>
+    <div class="wf-overlay-footer">
+      <span class="wf-btn-cancel">Cancel</span>
+      <span class="wf-btn-save">Save</span>
+    </div>
+  </div>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<!-- Footer                                                             -->
+<!-- ------------------------------------------------------------------ -->
+<footer>Transfer Gate v2 Documentation</footer>
+
+</div><!-- /.content-card -->
+</main>
+
+</body>
+</html>

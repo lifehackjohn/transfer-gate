@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Windows embeddable runtime (downloaded by Start-TransferGate-Online.bat)
+python-portable/
+python-*-embed-*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.tmp
+~$*
+.idea/
+.vscode/
+
+# Local runtime / batches
+_transfer-gate/
+*.log
+.coverage
+htmlcov/

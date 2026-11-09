@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Guide -- Transfer Gate v2</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f8fafc;
+    color: #1e293b;
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── Header bar ────────────────────────────────────────────── */
+  header {
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 20px 0;
+    text-align: center;
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  header .subtitle {
+    font-size: 15px;
+    color: #94a3b8;
+  }
+
+  /* ── Content wrapper ───────────────────────────────────────── */
+  .content {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    background: #ffffff;
+    min-height: calc(100vh - 100px - 60px);
+  }
+
+  /* ── Table of contents ─────────────────────────────────────── */
+  .toc {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    padding: 20px 24px;
+    border-radius: 6px;
+    margin-bottom: 32px;
+  }
+  .toc h2 {
+    font-size: 18px;
+    border-bottom: none;
+    margin: 0 0 12px 0;
+    padding-bottom: 0;
+    color: #1e293b;
+  }
+  .toc ol {
+    margin: 0 0 0 24px;
+    padding: 0;
+  }
+  .toc li {
+    margin-bottom: 6px;
+  }
+  .toc a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-size: 15px;
+  }
+  .toc a:hover {
+    text-decoration: underline;
+  }
+
+  /* ── Typography ────────────────────────────────────────────── */
+  h2 {
+    font-size: 22px;
+    border-bottom: 2px solid #3b82f6;
+    padding-bottom: 8px;
+    margin-top: 48px;
+    margin-bottom: 16px;
+    color: #1e293b;
+  }
+  h3 {
+    font-size: 18px;
+    color: #334155;
+    margin-top: 28px;
+    margin-bottom: 10px;
+  }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 0 0 14px 24px; }
+  li { margin-bottom: 6px; }
+
+  a { color: #3b82f6; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  strong { font-weight: 600; }
+
+  /* ── Tables ────────────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 14px;
+  }
+  thead th {
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  tbody tr:nth-child(even) { background: #f8fafc; }
+
+  /* ── Code blocks ───────────────────────────────────────────── */
+  code {
+    font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 13px;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 16px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 14px 0 20px;
+    font-family: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* ── Info / Tip / Warning / Caution boxes ──────────────────── */
+  .box {
+    padding: 12px 16px;
+    border-radius: 0 6px 6px 0;
+    margin: 16px 0 20px;
+    font-size: 14px;
+  }
+  .box-info {
+    border-left: 4px solid #3b82f6;
+    background: #eff6ff;
+  }
+  .box-tip {
+    border-left: 4px solid #3b82f6;
+    background: #eff6ff;
+  }
+  .box-warning {
+    border-left: 4px solid #f59e0b;
+    background: #fffbeb;
+  }
+  .box-caution {
+    border-left: 4px solid #ef4444;
+    background: #fef2f2;
+  }
+  .box strong {
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* ── Footer ────────────────────────────────────────────────── */
+  footer {
+    text-align: center;
+    padding: 24px;
+    color: #94a3b8;
+    font-size: 13px;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  /* ── Responsive ────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .content { padding: 20px 14px; }
+    header { padding: 16px 0; }
+    header h1 { font-size: 22px; }
+    table { font-size: 13px; }
+    thead th, tbody td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- Header                                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<header>
+  <h1>Transfer Gate v2 &mdash; User Guide</h1>
+  <div class="subtitle">Portable Online/Offline File Sorting for Air-Gapped Archives</div>
+</header>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- Content                                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<div class="content">
+
+  <!-- Table of Contents -->
+  <nav class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#installation">Installation</a></li>
+      <li><a href="#configuration">Configuration</a></li>
+      <li><a href="#online-usage">Online Usage (Sort &amp; Stage)</a></li>
+      <li><a href="#usb-transfer">USB Transfer</a></li>
+      <li><a href="#offline-usage">Offline Usage (Verify &amp; Place)</a></li>
+      <li><a href="#structure-rules">Structure Rules</a></li>
+      <li><a href="#troubleshooting">Troubleshooting</a></li>
+      <li><a href="#architecture-reference">Architecture Reference</a></li>
+    </ol>
+  </nav>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <!-- 1. Overview                                                -->
+  <!-- ────────────────────────────────────────────────────────── -->
+  <h2 id="overview">1. Overview</h2>
+
+  <p>Transfer Gate is a portable file sorting application designed for moving files from an unsorted staging area into a structured archive (the "Cabinet"). It bridges two environments:</p>
+
+  <ul>
+    <li><strong>Online Zone</strong> (NAS/Linux): Where unsorted files accumulate and AI-assisted classification happens. Requires Python 3 and a browser.</li>
+    <li><strong>Offline Zone</strong> (Air-gapped Windows): Where the Cabinet archive lives. Files are verified and placed into their permanent locations. Requires PowerShell 5.1+ and a browser.</li>
+  </ul>
+
+  <p>The workflow is: classify and stage files online, transfer via USB, verify and place files offline. A manifest system ensures no data is lost and provides checksums for integrity verification.</p>
+
+  <h3>Key Concepts</h3>
+
+  <ul>
+    <li><strong>Cabinet</strong>: Your root archive folder (e.g., <code>D:\Archive</code>). Contains a hierarchical folder structure that serves as your filing taxonomy.</li>
+    <li><strong>Batch</strong>: A timestamped folder containing files staged for transfer, along with manifest files.</li>
+    <li><strong>Manifest</strong>: JSON files that track what files are in a batch, where they should go, and whether they arrived intact.</li>
+    <li><strong>oMLX</strong>: A local AI model that suggests where files should be filed. Optional &mdash; the app works without it.</li>
+  </ul>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <!-- 2. Installation                                            -->
+  <!-- ────────────────────────────────────────────────────────── -->
+  <h2 id="installation">2. Installation</h2>
+
+  <p>Transfer Gate requires no installation. The entire application is a set of files you copy to wherever you need them.</p>
+
+  <h3>Files You Need</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>File</th>
+        <th>Required</th>
+        <th>Zone</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>transfer-gate.html</code></td>
+        <td>Yes</td>
+        <td>Both</td>
+        <td>The UI &mdash; open in any browser</td>
+      </tr>
+      <tr>
+        <td><code>transfer-gate-server.py</code></td>
+        <td>Yes (online)</td>
+        <td>Online</td>
+        <td>Python backend server</td>
+      </tr>
+      <tr>
+        <td><code>transfer-gate.ps1</code></td>
+        <td>Yes (offline)</td>
+        <td>Offline</td>
+        <td>PowerShell engine</td>
+      </tr>
+      <tr>
+        <td><code>transfer-gate.json</code></td>
+        <td>Yes</td>
+        <td>Both</td>
+        <td>Configuration file</td>
+      </tr>
+      <tr>
+        <td><code>structure-rules.yaml</code></td>
+        <td>Optional</td>
+        <td>Both</td>
+        <td>Folder metadata and rules</td>
+      </tr>
+      <tr>
+        <td><code>start-transfer-gate.command</code></td>
+        <td>Optional</td>
+        <td>Online (Mac)</td>
+        <td>Double-click launcher for macOS &mdash; starts server and opens browser</td>
+      </tr>
+      <tr>
+        <td><code>Start-TransferGate.bat</code></td>
+        <td>Optional</td>
+        <td>Offline (Win)</td>
+        <td>Double-click launcher for Windows offline (PowerShell) &mdash; no Python</td>
+      </tr>
+      <tr>
+        <td><code>Start-TransferGate-Online.bat</code></td>
+        <td>Optional</td>
+        <td>Online (Win)</td>
+        <td>Online server launcher &mdash; system Python, or <code>python-portable\</code>, or one-time embed download</td>
+      </tr>
+      <tr>
+        <td><code>python-portable\</code></td>
+        <td>Optional (Win)</td>
+        <td>Online (Win)</td>
+        <td>Embeddable CPython runtime (not in git; created by Online launcher if needed)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>System Requirements</h3>
+
+  <p><strong>Online Zone:</strong></p>
+  <ul>
+    <li>Python 3.8 or later (standard library only; pyyaml optional for structure rules)</li>
+    <li>Chrome 90+ or Edge 90+ browser</li>
+    <li>Network access to localhost only (no internet required)</li>
+    <li>oMLX local LLM endpoint (optional, for AI classification)</li>
+  </ul>
+
+  <p><strong>Offline Zone:</strong></p>
+  <ul>
+    <li>Windows PowerShell 5.1+ (ships with Windows 10/11)</li>
+    <li>Chrome 90+ or Edge 90+ browser</li>
+    <li>No Python required</li>
+    <li>No network access required</li>
+  </ul>
+
+  <h3>Setup Steps</h3>
+
+  <ol>
+    <li>Copy the <code>TransferTool/</code> folder to your online machine (e.g., the NAS).</li>
+    <li>Copy the same <code>TransferTool/</code> folder to your offline machine (e.g., the Cabinet workstation).</li>
+    <li>Edit <code>transfer-gate.json</code> on each machine to set the correct <code>cabinetRoot</code> path.</li>
+    <li>(Online only) If you have oMLX set up, ensure the endpoint URL is correct in config.</li>
+  </ol>
+
+  <h3>Quick Start with Launchers</h3>
+
+  <p>Platform launchers let you start Transfer Gate with a double-click &mdash; no terminal needed.</p>
+
+  <p><strong>macOS (Online Zone):</strong></p>
+  <ol>
+    <li>Double-click <code>start-transfer-gate.command</code> in Finder.</li>
+    <li>A Terminal window opens, starts the Python server, and opens <code>http://127.0.0.1:8080</code> in your default browser.</li>
+    <li>Close the Terminal window (or press Ctrl+C) to stop the server.</li>
+  </ol>
+
+  <p><strong>Windows (Online Zone — Python server):</strong></p>
+  <ol>
+    <li>Double-click <code>Start-TransferGate-Online.bat</code>.</li>
+    <li>Uses system Python 3.8+ if present; otherwise <code>python-portable\python.exe</code>; otherwise downloads embeddable Python 3.12.7 once (~15&nbsp;MB).</li>
+    <li>Starts <code>transfer-gate-server.py</code> and opens <code>http://127.0.0.1:8080</code>.</li>
+  </ol>
+
+  <p><strong>Windows (Offline Zone — PowerShell):</strong></p>
+  <ol>
+    <li>Double-click <code>Start-TransferGate.bat</code>.</li>
+    <li>A Command Prompt window opens, starts the PowerShell server, and opens <code>http://127.0.0.1:8080</code> in your default browser.</li>
+    <li>Close the Command Prompt window to stop the server.</li>
+  </ol>
+
+  <div class="box box-tip">
+    <strong>Tip</strong>
+    The launchers use the default port 8080. To change the port for the Mac launcher, set the <code>TG_PORT</code> environment variable before running (e.g., <code>TG_PORT=9090</code>). For Windows, edit the port in <code>transfer-gate.json</code>.
+  </div>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <!-- 3. Configuration                                           -->
+  <!-- ────────────────────────────────────────────────────────── -->
+  <h2 id="configuration">3. Configuration</h2>
+
+  <p>Transfer Gate uses a single JSON configuration file: <code>transfer-gate.json</code>, located in the same folder as the scripts.</p>
+
+  <h3>Configuration Format</h3>
+
+  <pre><code>{
+    "cabinetRoot": "D:\\Archive",
+    "inbox": "00 Inbox",
+    "manifestOutput": "gate-out",
+    "exclude": [
+        ".DS_Store",
+        "@eaDir",
+        ".Trashes",
+        ".TemporaryItems",
+        "#recycle",
+        ".streams",
+        "$RECYCLE.BIN",
+        "System Volume Information"
+    ],
+    "mediaFileNamingRule": "{date} {title}",
+    "omlxEndpoint": "http://localhost:8000/v1",
+    "serverPort": 8080
+}</code></pre>
+
+  <h3>Configuration Keys</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Key</th>
+        <th>Type</th>
+        <th>Default</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>cabinetRoot</code></td>
+        <td>string</td>
+        <td>(required)</td>
+        <td>Absolute path to the Cabinet root folder</td>
+      </tr>
+      <tr>
+        <td><code>inbox</code></td>
+        <td>string</td>
+        <td><code>"00 Inbox"</code></td>
+        <td>Relative path (from cabinetRoot) to the inbox folder for incoming batches</td>
+      </tr>
+      <tr>
+        <td><code>manifestOutput</code></td>
+        <td>string</td>
+        <td><code>"gate-out"</code></td>
+        <td>Relative path (from working directory) for staged batch output</td>
+      </tr>
+      <tr>
+        <td><code>exclude</code></td>
+        <td>string[]</td>
+        <td>(system files)</td>
+        <td>Filenames to ignore when scanning directories</td>
+      </tr>
+      <tr>
+        <td><code>mediaFileNamingRule</code></td>
+        <td>string</td>
+        <td><code>"{date} {title}"</code></td>
+        <td>Template for suggested filenames</td>
+      </tr>
+      <tr>
+        <td><code>omlxEndpoint</code></td>
+        <td>string</td>
+        <td><code>"http://localhost:8000/v1"</code></td>
+        <td>URL of the local oMLX LLM endpoint</td>
+      </tr>
+      <tr>
+        <td><code>serverPort</code></td>
+        <td>number</td>
+        <td><code>8080</code></td>
+        <td>Port for the local HTTP server</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>cabinetRoot Explained</h3>
+
+  <p>This is the most important setting. It tells Transfer Gate where your archive lives. Examples:</p>
+
+  <ul>
+    <li>Windows: <code>"D:\\Archive"</code> or <code>"E:\\Cabinet"</code></li>
+    <li>UNC: <code>"\\\\NAS\\share\\Archive"</code> (note double backslash escaping in JSON)</li>
+    <li>Linux/macOS: <code>"/volume1/Archive"</code> or <code>"/mnt/archive"</code></li>
+  </ul>
+
+  <p>When you move your Cabinet to a different drive, just update this one value. No other changes needed.</p>
+
+  <div class="box box-info">
+    <strong>v1 Migration</strong>
+    If you have an older config with <code>archiveRoot</code> instead of <code>cabinetRoot</code>, Transfer Gate will automatically migrate it on first run. Your old config is preserved.
+  </div>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <!-- 4. Online Usage                                            -->
+  <!-- ────────────────────────────────────────────────────────── -->
+  <h2 id="online-usage">4. Online Usage (Sort &amp; Stage)</h2>
+
+  <h3>Starting the Server</h3>
+
+  <p><strong>Easy way (macOS):</strong> Double-click <code>start-transfer-gate.command</code> &mdash; it starts the server and opens the browser automatically.</p>
+
+  <p><strong>Manual way:</strong> Open a terminal on your online machine and run:</p>
+
+  <pre><code>cd /path/to/TransferTool
+python3 transfer-gate-server.py</code></pre>
+
+  <p>Optional flags:</p>
+
+  <pre><code>python3 transfer-gate-server.py --port 9090          # Custom port
+python3 transfer-gate-server.py --root /path/to/tosort  # Custom source directory
+python3 transfer-gate-server.py --cabinet /volume1/Archive  # Override cabinet path</code></pre>
+
+  <p>The server will print a message like:</p>
+
+  <pre><code>Transfer Gate v2 server running on http://127.0.0.1:8080
+Cabinet: /volume1/Archive
+Source:  /volume1/tosort</code></pre>
+
+  <h3>Opening the Browser</h3>
+
+  <p>Navigate to <code>http://localhost:8080</code> in Chrome or Edge. The UI will load and auto-detect online mode (green status dot in header).</p>
+
+  <h3>Loading Files</h3>
+
+  <p>The left panel ("Unsorted Files") automatically shows all files found in your <code>tosort/</code> directory. Each file card displays:</p>
+
+  <ul>
+    <li>Original filename</li>
+    <li>File extension badge</li>
+    <li>File size</li>
+    <li>Last modified date</li>
+  </ul>
+
+  <h3>AI Classification</h3>
+
+  <p>If oMLX is available, each file card will show an AI suggestion badge indicating:</p>
+
+  <ul>
+    <li>Suggested destination folder (e.g., "10 Finance/Tax")</li>
+    <li>Confidence score (e.g., 87%)</li>
+  </ul>
+
+  <p>The suggestion is based on the file's name, extension, and metadata matched against your Cabinet's folder structure. Files are NOT sent to the AI &mdash; only metadata.</p>
+
+  <div class="box box-tip">
+    <strong>Tip</strong>
+    Better structure rules = better AI suggestions. Add descriptions to your folders in <code>structure-rules.yaml</code> to help the AI understand what belongs where.
+  </div>
+
+  <h3>Reviewing Suggestions</h3>
+
+  <p>For each file, you can:</p>
+
+  <ol>
+    <li><strong>Accept</strong> &mdash; Click the green Accept button to approve the AI suggestion (or your manual selection).</li>
+    <li><strong>Override</strong> &mdash; Change the destination folder using the dropdown, then click Accept.</li>
+    <li><strong>Skip</strong> &mdash; Click Skip to exclude the file from this batch.</li>
+  </ol>
+
+  <h3>Mandatory Rename</h3>
+
+  <p>Every file MUST be renamed before it can be staged. The rename field is pre-filled with a suggested name based on your naming rule (e.g., <code>"{date} {title}"</code>). The field is highlighted if the name has not been changed from the original filename.</p>
+
+  <div class="box box-warning">
+    <strong>Warning</strong>
+    You cannot stage a file with its original filename. This is intentional &mdash; it enforces consistent naming in your archive. Change the name to match your naming convention (e.g., "2026-11-07 Invoice from Vendor.pdf").
+  </div>
+
+  <h3>Staging a Batch</h3>
+
+  <p>Once you have accepted all desired files:</p>
+
+  <ol>
+    <li>Review the summary in the action bar (e.g., "8 accepted, 2 skipped").</li>
+    <li>Click "Stage Batch".</li>
+    <li>The server creates a timestamped batch folder in <code>gate-out/</code> containing:
+      <ul>
+        <li><code>payload/</code> &mdash; the renamed files</li>
+        <li><code>placement-manifest.json</code> &mdash; maps each file to its destination</li>
+        <li><code>transfer-manifest.json</code> &mdash; SHA-256 checksums for verification</li>
+      </ul>
+    </li>
+    <li>Copy the batch folder to a USB stick for transfer to the offline machine.</li>
+  </ol>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <!-- 5. USB Transfer                                            -->
+  <!-- ────────────────────────────────────────────────────────── -->
+  <h2 id="usb-transfer">5. USB Transfer</h2>
+
+  <h3>From Online to Offline</h3>
+
+  <ol>
+    <li>Locate the batch folder in your <code>gate-out/</code> directory (e.g., <code>gate-out/batch-20261107-143022/</code>).</li>
+    <li>Copy the entire batch folder to a USB stick.</li>
+    <li>Carry the USB to your offline (air-gapped) machine.</li>
+    <li>Copy the batch folder into the Cabinet's inbox folder (e.g., <code>D:\Archive\00 Inbox\</code>).</li>
+  </ol>
+
+  <h3>From Offline to Online (Return Trip)</h3>
+
+  <ol>
+    <li>After placing files, copy the <code>placement-receipt.json</code> from the batch folder back to USB.</li>
+    <li>Optionally run <code>transfer-gate.ps1 -Mode export</code> to generate an updated <code>offline-structure-manifest.json</code> and copy that to USB as well.</li>
+    <li>Return USB to online machine.</li>
+    <li>The placement receipt tells the online side that files were successfully placed and source copies can be safely deleted.</li>
+  </ol>
+
+  <div class="box box-info">
+    <strong>The Two-Phase Prune Contract</strong>
+    Source files in <code>tosort/</code> are NEVER deleted until a verified placement receipt returns through the gate. This ensures zero data loss even if the USB stick is lost or corrupted.
+  </div>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <!-- 6. Offline Usage                                           -->
+  <!-- ────────────────────────────────────────────────────────── -->
+  <h2 id="offline-usage">6. Offline Usage (Verify &amp; Place)</h2>
+
+  <h3>Option A: Double-Click Launcher (Easiest)</h3>
+
+  <p>Double-click <code>Start-TransferGate.bat</code>. It starts the PowerShell server and opens the browser automatically. No terminal commands needed.</p>
+
+  <h3>Option B: Using the PowerShell Server (Manual)</h3>
+
+  <pre><code>cd D:\path\to\TransferTool
+powershell -ExecutionPolicy Bypass -File .\transfer-gate.ps1 -Mode serve</code></pre>
+
+  <p>Then open <code>http://localhost:8080</code> in a browser. The UI auto-detects offline mode (amber status dot).</p>
+
+  <h3>Option C: Opening HTML Directly</h3>
+
+  <p>Double-click <code>transfer-gate.html</code> to open it in your browser. Without a server, it runs in limited offline mode using localStorage.</p>
+
+  <h3>Option D: Command-Line Only</h3>
+
+  <pre><code># Verify all batches in inbox
+powershell -ExecutionPolicy Bypass -File .\transfer-gate.ps1 -Mode verify
+
+# Place files from a specific batch
+powershell -ExecutionPolicy Bypass -File .\transfer-gate.ps1 -Mode place -BatchPath "D:\Archive\00 Inbox\batch-20261107-143022"
+
+# Export Cabinet structure
+powershell -ExecutionPolicy Bypass -File .\transfer-gate.ps1 -Mode export
+
+# Run verify + export (default)
+powershell -ExecutionPolicy Bypass -File .\transfer-gate.ps1</code></pre>
+
+  <h3>Selecting a Batch</h3>
+
+  <p>In the UI, the left panel shows available batches in the inbox folder. Select a batch to see its contents.</p>
+
+  <h3>Verification</h3>
+
+  <p>Each file in the batch is checked against its <code>transfer-manifest.json</code>:</p>
+
+  <ul>
+    <li>File exists in <code>payload/</code></li>
+    <li>File size matches</li>
+    <li>SHA-256 checksum matches</li>
+  </ul>
+
+  <p>Status indicators:</p>
+
+  <ul>
+    <li>Green checkmark = verified</li>
+    <li>Red X = failed (checksum mismatch or missing file)</li>
+    <li>Grey spinner = in progress</li>
+  </ul>
+
+  <div class="box box-warning">
+    <strong>Warning</strong>
+    If any file fails verification, do NOT place that file. The USB transfer may have corrupted it. Re-copy from the online machine.
+  </div>
+
+  <h3>Placement Preview</h3>
+
+  <p>The right panel shows the Cabinet tree with highlighted destination folders. Expand a folder to see which files will be placed there.</p>
+
+  <h3>Placing Files</h3>
+
+  <ol>
+    <li>Review the placement preview.</li>
+    <li>Click "Place Files".</li>
+    <li>Each verified file is moved from the batch payload to its Cabinet destination.</li>
+    <li>A <code>placement-receipt.json</code> is generated in the batch folder.</li>
+  </ol>
+
+  <h3>Conflict Handling</h3>
+
+  <p>If a file with the same name already exists at the destination:</p>
+
+  <ul>
+    <li><strong>Skip</strong>: Leave the file in the batch (not placed).</li>
+    <li><strong>Rename</strong>: Add a numeric suffix (e.g., "Document (2).pdf").</li>
+    <li><strong>Overwrite</strong>: Replace the existing file (use with caution).</li>
+  </ul>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <!-- 7. Structure Rules                                         -->
+  <!-- ────────────────────────────────────────────────────────── -->
+  <h2 id="structure-rules">7. Structure Rules</h2>
+
+  <p>Structure rules are defined in <code>structure-rules.yaml</code> and provide metadata about your Cabinet's folder structure.</p>
+
+  <h3>What They Do</h3>
+
+  <ul>
+    <li>Add human-readable descriptions to folders (used by AI for better classification)</li>
+    <li>Define accepted file types per folder (e.g., Finance only accepts pdf, xlsx, csv, docx)</li>
+    <li>Set naming conventions per folder</li>
+    <li>Define the folder hierarchy</li>
+  </ul>
+
+  <h3>Example structure-rules.yaml</h3>
+
+  <pre><code>folders:
+  "00 Inbox":
+    description: "Incoming unsorted files - staging area"
+    accepts: ["*"]
+  "10 Finance":
+    description: "All financial documents"
+    accepts: ["pdf", "xlsx", "csv", "docx"]
+    naming: "YYYY-MM-DD Title (version)"
+    children:
+      "Banking":
+        description: "Bank statements, correspondence"
+      "Insurance":
+        description: "Insurance policies, claims"
+      "Tax":
+        description: "Tax returns, assessments"
+        children:
+          "*":
+            description: "Year subfolder, auto-created"
+      "Invoices":
+        description: "Invoices, receipts, billing"
+  "20 Legal":
+    description: "Legal documents"
+    accepts: ["pdf", "docx"]
+    children:
+      "Contracts":
+        description: "Signed contracts, agreements"
+      "Filings":
+        description: "Court filings, registrations"</code></pre>
+
+  <h3>Editing via UI</h3>
+
+  <ol>
+    <li>Click the gear icon in the header to open Settings.</li>
+    <li>Scroll to "Structure Rules Editor".</li>
+    <li>Edit the YAML content.</li>
+    <li>Click Save.</li>
+  </ol>
+
+  <p>Changes take effect immediately for AI classification.</p>
+
+  <div class="box box-tip">
+    <strong>Tip</strong>
+    Good descriptions help the AI. Instead of just "Tax", write "Tax returns, assessments, and correspondence with tax authorities". The more context, the better the classification.
+  </div>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <!-- 8. Troubleshooting                                         -->
+  <!-- ────────────────────────────────────────────────────────── -->
+  <h2 id="troubleshooting">8. Troubleshooting</h2>
+
+  <h3>oMLX Not Available</h3>
+  <p><strong>Problem:</strong> AI suggestion badges show "unavailable" or do not appear.</p>
+  <p><strong>Cause:</strong> The oMLX endpoint is not running or the URL is incorrect.</p>
+  <p><strong>Solution:</strong> Check that your local LLM is running and the endpoint URL in config matches. The app works fine without AI &mdash; just classify files manually.</p>
+
+  <h3>Cabinet Path Invalid</h3>
+  <p><strong>Problem:</strong> Header shows "Cabinet: invalid" with red indicator.</p>
+  <p><strong>Cause:</strong> The <code>cabinetRoot</code> path in config does not exist or is not accessible.</p>
+  <p><strong>Solution:</strong> Open Settings and update the Cabinet Root Path to a valid, accessible directory. On Windows, ensure the drive is mounted. On NAS, ensure the volume is available.</p>
+
+  <h3>File Conflicts During Placement</h3>
+  <p><strong>Problem:</strong> Files show conflict status during offline placement.</p>
+  <p><strong>Cause:</strong> A file with the same name already exists at the destination.</p>
+  <p><strong>Solution:</strong> Choose Skip (to leave it), Rename (to add a suffix), or Overwrite (to replace). Consider reviewing your naming conventions to avoid future conflicts.</p>
+
+  <h3>PowerShell Execution Policy</h3>
+  <p><strong>Problem:</strong> Running <code>transfer-gate.ps1</code> shows "execution of scripts is disabled".</p>
+  <p><strong>Cause:</strong> Windows default execution policy blocks unsigned scripts.</p>
+  <p><strong>Solution:</strong> Run with the bypass flag:</p>
+  <pre><code>powershell -ExecutionPolicy Bypass -File .\transfer-gate.ps1</code></pre>
+  <p>Or create a <code>.bat</code> launcher file containing that command.</p>
+
+  <h3>Checksum Verification Fails</h3>
+  <p><strong>Problem:</strong> Files show red X during offline verification.</p>
+  <p><strong>Cause:</strong> File was corrupted during USB transfer.</p>
+  <p><strong>Solution:</strong> Re-copy the batch from the online machine. Do not place corrupted files. If the issue persists, try a different USB stick.</p>
+
+  <h3>Large Files Are Slow</h3>
+  <p><strong>Problem:</strong> Staging or verification takes a very long time for large files.</p>
+  <p><strong>Cause:</strong> SHA-256 checksum computation is CPU-intensive for multi-GB files.</p>
+  <p><strong>Solution:</strong> This is expected behavior. The progress indicator shows computation status. A 2 GB file may take 30&ndash;60 seconds depending on hardware.</p>
+
+  <h3>Settings Not Persisting</h3>
+  <p><strong>Problem:</strong> Settings revert after closing the browser.</p>
+  <p><strong>Cause:</strong> In pure offline mode (no server), settings are stored in localStorage which is browser-specific.</p>
+  <p><strong>Solution:</strong> Use the PowerShell serve mode (<code>-Mode serve</code>) instead of opening the HTML directly. Or edit <code>transfer-gate.json</code> manually.</p>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <!-- 9. Architecture Reference                                  -->
+  <!-- ────────────────────────────────────────────────────────── -->
+  <h2 id="architecture-reference">9. Architecture Reference</h2>
+
+  <p>For technical details about the system architecture, refer to the companion documents:</p>
+
+  <ul>
+    <li><strong>HLD (High-Level Design)</strong>: Detailed architecture, component design, data flows, and manifest formats. See <a href="hld.html">hld.html</a>.</li>
+    <li><strong>PRD (Product Requirements)</strong>: Full requirements, user stories, and acceptance criteria. See <a href="prd.html">prd.html</a>.</li>
+    <li><strong>App Layout Canvas</strong>: UI wireframes and interaction design. See <a href="app-layout.html">app-layout.html</a>.</li>
+  </ul>
+
+  <h3>System Summary</h3>
+
+  <p>Transfer Gate is a three-component system:</p>
+
+  <ol>
+    <li><strong>transfer-gate.html</strong> &mdash; Portable UI that works in both zones.</li>
+    <li><strong>transfer-gate-server.py</strong> &mdash; Python backend for the online zone.</li>
+    <li><strong>transfer-gate.ps1</strong> &mdash; PowerShell engine for the offline zone.</li>
+  </ol>
+
+  <p>These communicate via localhost HTTP. The HTML file detects its environment and adapts automatically. Data flows through USB batches with manifest files ensuring integrity at every step.</p>
+
+</div>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- Footer                                                      -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<footer>
+  Transfer Gate v2 Documentation
+</footer>
+
+</body>
+</html>
