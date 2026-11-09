@@ -229,16 +229,20 @@
 <!-- ────────────────────────────────────────────────────────── -->
 <h2 id="architecture-overview">1. Architecture Overview</h2>
 
-<p>Transfer Gate v2 is a three-component system designed for portable file sorting across online and air-gapped zones:</p>
+<p><strong>HLD Rev 4</strong> — Product repo: <a href="https://github.com/lifehackjohn/transfer-gate">lifehackjohn/transfer-gate</a></p>
+
+<p>Transfer Gate v2 is a three-component system for portable file sorting across <strong>two disconnected worlds</strong> (online intake vs offline Cabinet). Paths are not baked into the install — they are configured after launch.</p>
 
 <ol>
-  <li><strong>transfer-gate.html</strong> &mdash; Single-file portable UI (HTML + CSS + JS). Runs in any modern browser. Detects environment and switches between online and offline modes.</li>
-  <li><strong>transfer-gate-server.py</strong> &mdash; Python 3 HTTP backend for the online zone. Provides filesystem access, oMLX AI classification, batch staging, and config management.</li>
-  <li><strong>transfer-gate.ps1</strong> &mdash; PowerShell engine for the offline zone. Handles verification, file placement, structure export, and can serve the HTML UI locally.</li>
+  <li><strong>transfer-gate.html</strong> &mdash; Single-file portable UI. Same file in both worlds. Detects online (Python API) vs offline (PowerShell API / static fallback).</li>
+  <li><strong>transfer-gate-server.py</strong> &mdash; Online-world HTTP backend: filesystem for source/sorted, optional oMLX classify, batch staging, config GET/PUT. <strong>Starts with empty paths.</strong></li>
+  <li><strong>transfer-gate.ps1</strong> &mdash; Offline-world engine: <code>serve</code> (UI host), <code>verify</code>, <code>place</code>, <code>export</code>, <code>all</code>. <code>serve</code> starts without Cabinet; place/verify/export require it.</li>
 </ol>
 
 <div class="info-box">
-  <p>The central abstraction is the <strong>Cabinet</strong> &mdash; a root folder (e.g., <code>D:\Archive</code>) containing a hierarchical tree of subfolders that serves as both the filing taxonomy and the physical storage.</p>
+  <p><strong>Online world:</strong> Mac/NAS (or Windows with Python) — classify &amp; stage batches. Launchers: <code>start-transfer-gate.command</code>, <code>Start-TransferGate-Online.bat</code> (+ portable Python bootstrap).</p>
+  <p><strong>Offline world:</strong> Air-gapped Windows + NTFS Cabinet — verify &amp; place. Launcher: <code>Start-TransferGate.bat</code> → PS1 serve (no Python). Bridge = USB batches + manifests only.</p>
+  <p>The <strong>Cabinet</strong> is the offline archive root (folder taxonomy = classification). It is not required on disk until the user configures <code>cabinetRoot</code> and runs Cabinet operations.</p>
 </div>
 
 <h3>System Architecture Diagram</h3>
@@ -300,13 +304,22 @@
 <h3>What is the Cabinet?</h3>
 <p>The Cabinet is the root folder of the user's hierarchical file archive. It contains numbered top-level folders (e.g., &ldquo;10 Finance&rdquo;, &ldquo;20 Legal&rdquo;) with nested subfolders. The folder hierarchy <strong>IS</strong> the classification taxonomy.</p>
 
-<h3>Path Resolution Chain</h3>
-<p>When the app starts, it resolves the Cabinet path through this chain:</p>
+<h3>Path model (three independent settings)</h3>
+<table>
+  <thead><tr><th>Key</th><th>World</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>sourcePath</code></td><td>Online</td><td>Unsorted intake folder to scan</td></tr>
+    <tr><td><code>sortedPath</code></td><td>Online (→ USB)</td><td>Where staged batches are written for transfer</td></tr>
+    <tr><td><code>cabinetRoot</code></td><td>Offline (primarily)</td><td>Archive root on the air-gapped volume</td></tr>
+  </tbody>
+</table>
+<p><strong>Startup chain (Rev 4):</strong></p>
 <ol>
-  <li><strong>Config file</strong> &mdash; <code>transfer-gate.json</code>: <code>cabinetRoot</code></li>
-  <li><strong>Validation</strong> &mdash; does the path exist and is it accessible?</li>
-  <li><strong>Interactive fallback</strong> &mdash; prompt user via settings overlay</li>
-  <li><strong>Session storage</strong> &mdash; remember for current session</li>
+  <li>Load <code>transfer-gate.json</code> (may be empty strings).</li>
+  <li>Migrate v1 <code>archiveRoot</code> → <code>cabinetRoot</code> if needed (empty string counts as unset).</li>
+  <li><strong>Always start</strong> HTTP serve (Python or PS1). Do not exit for missing paths.</li>
+  <li>UI shows Setup banner for any unset path; Settings / PUT <code>/api/config</code> persists values.</li>
+  <li>When a path is set and used, validate existence for that operation (and Windows drive readiness if rooted).</li>
 </ol>
 
 <h3>Mount Variant Handling</h3>
@@ -334,9 +347,9 @@
 
 <h3>transfer-gate.html</h3>
 <ul>
-  <li><strong>Environment detection:</strong> on load, attempts to reach <code>/api/health</code>. If reachable, enters online mode. If not, enters offline mode (localStorage-based).</li>
-  <li><strong>Online mode:</strong> full sort-and-stage workflow with AI classification.</li>
-  <li><strong>Offline mode:</strong> verify-and-place workflow, or serves as viewer for manifests.</li>
+  <li><strong>Environment detection:</strong> on load, attempts to reach the local HTTP API. If Python server answers → online world UI. If PowerShell serve answers → offline world UI. If neither → limited static/localStorage mode.</li>
+  <li><strong>Online mode:</strong> sort-and-stage with optional AI; needs Source (and Sorted for batch write) when those actions run.</li>
+  <li><strong>Offline mode:</strong> verify-and-place against Cabinet; needs Cabinet when verify/place/export run. Serve itself does not.</li>
   <li><strong>Tech:</strong> vanilla HTML/CSS/JS, no frameworks, no build step, no CDN.</li>
 </ul>
 

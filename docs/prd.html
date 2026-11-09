@@ -217,25 +217,34 @@
   <p style="font-size:1.05rem; color:#475569; margin-bottom:20px;">Portable Online/Offline File Sorting App</p>
 
   <div class="meta-block">
-    <strong>Status:</strong> Rev 2 &mdash; Cabinet Abstraction &amp; Flexible Target Structure<br>
-    <strong>Issue:</strong> BLU-2656
+    <strong>Status:</strong> Rev 4 &mdash; First-run zero-config + offline world clarity<br>
+    <strong>Issue:</strong> BLU-2656 (design) / BLU-2674–2678 (path UI, portable Python, offline launch)<br>
+    <strong>Product repo:</strong> <a href="https://github.com/lifehackjohn/transfer-gate">github.com/lifehackjohn/transfer-gate</a>
   </div>
 
   <!-- ──────────────────────────────────────────────────────── -->
   <h2 id="problem-statement">1. Problem Statement</h2>
 
-  <p>The household digital archive spans two zones: an always-online NAS (Synology) running Linux, and an air-gapped Windows workstation connected to a large NTFS Cabinet drive. Files accumulate in a <code>tosort/</code> staging folder on the NAS. The current Transfer Gate v1 is CLI-only (PowerShell scripts and shell helpers) and offers no visual sorting workflow.</p>
-
-  <p>Moving files from the online zone to their final Cabinet location requires:</p>
-  <ol>
-    <li>Classifying each file.</li>
-    <li>Choosing or creating a destination folder.</li>
-    <li>Renaming to match naming conventions.</li>
-    <li>Staging onto USB media.</li>
-    <li>Verifying integrity offline.</li>
-    <li>Placing files in the Cabinet.</li>
-  </ol>
-  <p>This multi-step process is error-prone and slow without a UI.</p>
+  <p>The household digital archive spans <strong>two separate worlds</strong> that never share a live network:</p>
+  <table>
+    <thead><tr><th>World</th><th>Machine</th><th>Role</th><th>Runtime</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Online</strong></td>
+        <td>Mac Mini / NAS-mounted paths (or any online workstation)</td>
+        <td>Unsorted intake (<code>source</code>), AI-assisted classify/rename, stage batches to a transfer folder</td>
+        <td><code>transfer-gate-server.py</code> + browser UI; optional oMLX</td>
+      </tr>
+      <tr>
+        <td><strong>Offline</strong></td>
+        <td>Air-gapped Windows PC + large NTFS <strong>Cabinet</strong> volume</td>
+        <td>Receive USB/batch, verify checksums, place into Cabinet tree, export structure/receipts back</td>
+        <td><code>transfer-gate.ps1 -Mode serve</code> (or CLI modes) + <strong>same</strong> <code>transfer-gate.html</code></td>
+      </tr>
+    </tbody>
+  </table>
+  <p>The only bridge is physical media (USB) carrying batch folders + manifests. There is no live mount of the Cabinet from the online world.</p>
+  <p><strong>First-run rule (board):</strong> the app and servers MUST start with empty path settings. Source, sorted/outbox, and Cabinet are configured later in Settings (or by editing <code>transfer-gate.json</code>). A missing directory MUST NOT prevent the UI or HTTP server from launching.</p>
 
   <!-- ──────────────────────────────────────────────────────── -->
   <h2 id="goals">2. Goals</h2>
@@ -258,17 +267,17 @@
   <!-- ──────────────────────────────────────────────────────── -->
   <h2 id="user-stories">3. User Stories</h2>
 
-  <h3>US-0: Cabinet Path Setup</h3>
-  <p>As a user, I can configure the Cabinet root path (e.g., <code>D:\Archive</code> or <code>/volume1/Archive</code>) via the settings overlay, and the entire app adapts to that path without code changes.</p>
+  <h3>US-0: Zero-config first launch + path setup</h3>
+  <p>As a user, I double-click a launcher and the app opens immediately with empty paths. A clear Setup banner lists missing Source / Sorted / Cabinet. I set them in Settings (or JSON) when ready; the app adapts without reinstall. Servers never refuse to start solely because a path is empty.</p>
 
-  <h3>Online Zone</h3>
+  <h3>Online world</h3>
 
   <table>
     <thead>
       <tr><th>ID</th><th>Story</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>US-1</strong></td><td>As a user, I open Transfer Gate in a browser and see all unsorted files from <code>tosort/</code> in the left panel with metadata (name, size, date, extension).</td></tr>
+      <tr><td><strong>US-1</strong></td><td>As a user, once Source is configured, I see unsorted files from that folder in the left panel with metadata (name, size, date, extension).</td></tr>
       <tr><td><strong>US-2</strong></td><td>As a user, I see an AI-suggested destination folder and confidence score for each file, powered by a local oMLX model.</td></tr>
       <tr><td><strong>US-3</strong></td><td>As a user, I can accept, override, or skip the AI suggestion for each file using the file card controls.</td></tr>
       <tr><td><strong>US-4</strong></td><td>As a user, I must provide a renamed filename following the naming convention before a file can be staged (mandatory rename).</td></tr>
@@ -276,17 +285,26 @@
     </tbody>
   </table>
 
-  <h3>Offline Zone</h3>
+  <h3>Offline world (air-gapped Windows + Cabinet)</h3>
+  <p>Offline is not “open the HTML file and hope.” It is a full second runtime:</p>
+  <ul>
+    <li><strong>Launcher:</strong> <code>Start-TransferGate.bat</code> starts PowerShell <code>transfer-gate.ps1 -Mode serve</code> and opens the browser (no Python required).</li>
+    <li><strong>Same UI:</strong> <code>transfer-gate.html</code> talks to the PS1 HTTP server on localhost (or falls back if nothing listens).</li>
+    <li><strong>Cabinet:</strong> large NTFS archive (e.g. <code>D:\Archive</code>) configured only on this machine — drive letter may differ from any online path.</li>
+    <li><strong>Work:</strong> drop USB batch into inbox → verify SHA-256 → placement preview → place into Cabinet → write receipts → optionally export structure for the online AI.</li>
+    <li><strong>CLI modes</strong> (no UI): <code>verify</code>, <code>place</code>, <code>export</code>, <code>all</code> — these require a configured Cabinet; <code>serve</code> does not require it at start.</li>
+  </ul>
 
   <table>
     <thead>
       <tr><th>ID</th><th>Story</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>US-6</strong></td><td>As a user, I open Transfer Gate on the air-gapped machine and it auto-detects offline mode (no Python server).</td></tr>
-      <tr><td><strong>US-7</strong></td><td>As a user, I select an inbound USB batch and see verification status (checksum pass/fail) for every file.</td></tr>
+      <tr><td><strong>US-6</strong></td><td>As a user, I start Transfer Gate offline with the Windows offline launcher; UI loads even if Cabinet path is not set yet.</td></tr>
+      <tr><td><strong>US-7</strong></td><td>As a user, after setting Cabinet (and pointing at an inbound batch), I see verification status (checksum pass/fail) for every file.</td></tr>
       <tr><td><strong>US-8</strong></td><td>As a user, I see a placement preview showing where each file will land in the Cabinet tree.</td></tr>
       <tr><td><strong>US-9</strong></td><td>As a user, I click &ldquo;Place Files&rdquo; and all verified files are moved to their Cabinet destinations, with conflict handling.</td></tr>
+      <tr><td><strong>US-9b</strong></td><td>As a user on Windows online (not air-gapped), I can run the Python path via <code>Start-TransferGate-Online.bat</code> with system Python or portable embed download — distinct from the offline PowerShell launcher.</td></tr>
     </tbody>
   </table>
 
@@ -325,9 +343,12 @@
       <tr><th>ID</th><th>Requirement</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>FR-5</strong></td><td>The Cabinet root path SHALL be configurable via <code>transfer-gate.json</code> and editable in the settings overlay.</td></tr>
-      <tr><td><strong>FR-6</strong></td><td>The Cabinet tree SHALL be loaded from the live filesystem (online) or from <code>offline-structure-manifest.json</code> (offline/online fallback).</td></tr>
-      <tr><td><strong>FR-7</strong></td><td>Classification SHALL use the oMLX folder tree as its taxonomy &mdash; the AI prompt includes the full Cabinet folder hierarchy from <code>structure-rules.yaml</code>.</td></tr>
+      <tr><td><strong>FR-5</strong></td><td>Three paths SHALL be independently configurable: <code>sourcePath</code> (unsorted intake), <code>sortedPath</code> (batch outbox / transfer staging), <code>cabinetRoot</code> (archive). Editable in Settings and <code>transfer-gate.json</code>.</td></tr>
+      <tr><td><strong>FR-5a</strong></td><td><strong>Zero-config start:</strong> Python and PowerShell <code>serve</code> SHALL start successfully when any or all of those paths are empty. Missing paths SHALL surface as UI Setup guidance, not process exit codes that kill the launcher.</td></tr>
+      <tr><td><strong>FR-5b</strong></td><td>Operations that need a path (scan source, stage batch, place into Cabinet, verify against Cabinet) SHALL fail that operation with a clear message if the path is unset — without preventing the rest of the app from running.</td></tr>
+      <tr><td><strong>FR-6</strong></td><td>The Cabinet tree SHALL be loaded from the live filesystem when <code>cabinetRoot</code> is set, or from <code>offline-structure-manifest.json</code> when used as taxonomy fallback online.</td></tr>
+      <tr><td><strong>FR-7</strong></td><td>Classification SHALL use the Cabinet folder tree as taxonomy when available; oMLX receives metadata only (name, extension, size) — never file contents.</td></tr>
+      <tr><td><strong>FR-7a</strong></td><td>Windows online launcher SHALL prefer system Python, then <code>python-portable\</code>, then one-time embeddable download. Offline launcher SHALL NOT require Python.</td></tr>
     </tbody>
   </table>
 
