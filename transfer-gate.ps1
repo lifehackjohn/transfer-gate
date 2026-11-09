@@ -69,7 +69,7 @@ if (-not (Test-Path $Config)) {
 }
 $cfg = Get-Content $Config -Raw -Encoding UTF8 | ConvertFrom-Json
 
-# Auto-migrate v1 archiveRoot -> cabinetRoot
+# Auto-migrate v1 archiveRoot -> cabinetRoot (empty string counts as unset)
 $CabinetRoot = $null
 if ($cfg.PSObject.Properties.Name -contains "cabinetRoot" -and $cfg.cabinetRoot) {
     $CabinetRoot = $cfg.cabinetRoot
@@ -78,15 +78,21 @@ if ($cfg.PSObject.Properties.Name -contains "cabinetRoot" -and $cfg.cabinetRoot)
     if (-not $Quiet) {
         Write-Host "NOTE: Using archiveRoot as cabinetRoot (v1 config auto-migration)" -ForegroundColor Yellow
     }
-} else {
-    Write-Host "ERROR: config must specify cabinetRoot (or archiveRoot for v1 compat)" -ForegroundColor Red
-    exit 2
+}
+
+# First-run / serve: cabinetRoot is OPTIONAL until place/verify/export need it.
+# Do not exit here — UI Settings (or later CLI modes) set paths.
+if (-not $CabinetRoot) {
+    if (-not $Quiet) {
+        Write-Host "WARNING: cabinetRoot not set — serve/UI will start; set path in Settings or transfer-gate.json before place/verify/export." -ForegroundColor Yellow
+    }
 }
 
 # Validate drive letter exists before any Join-Path or Test-Path call.
 # PowerShell's Join-Path validates the PSDrive provider and throws
 # "Cannot find drive" if the letter doesn't exist — .NET DriveInfo avoids this.
 function Assert-DriveReady([string]$Path, [string]$Label) {
+    if (-not $Path) { return }
     if (-not [System.IO.Path]::IsPathRooted($Path)) { return }
     $root = [System.IO.Path]::GetPathRoot($Path)
     if ($root -match '^[A-Za-z]:\\') {
@@ -96,19 +102,21 @@ function Assert-DriveReady([string]$Path, [string]$Label) {
             if (-not $di.IsReady) {
                 Write-Host "ERROR: Drive ${letter}: is not ready." -ForegroundColor Red
                 Write-Host "  '$Label' is set to: $Path" -ForegroundColor Yellow
-                Write-Host "  Edit transfer-gate.json with the correct paths for this machine." -ForegroundColor Yellow
+                Write-Host "  Edit transfer-gate.json or Settings with the correct paths for this machine." -ForegroundColor Yellow
                 exit 2
             }
         } catch {
             Write-Host "ERROR: Drive ${letter}: does not exist." -ForegroundColor Red
             Write-Host "  '$Label' is set to: $Path" -ForegroundColor Yellow
-            Write-Host "  Edit transfer-gate.json with the correct paths for this machine." -ForegroundColor Yellow
+            Write-Host "  Edit transfer-gate.json or Settings with the correct paths for this machine." -ForegroundColor Yellow
             exit 2
         }
     }
 }
 
-Assert-DriveReady $CabinetRoot "cabinetRoot"
+if ($CabinetRoot) {
+    Assert-DriveReady $CabinetRoot "cabinetRoot"
+}
 
 # Resolve inbox: relative to CabinetRoot unless it is an absolute path.
 # Uses [IO.Path]::Combine instead of Join-Path to avoid PSDrive validation
@@ -116,11 +124,12 @@ Assert-DriveReady $CabinetRoot "cabinetRoot"
 function Resolve-ConfigPath([string]$Value, [string]$Root) {
     if (-not $Value) { return $null }
     if ([System.IO.Path]::IsPathRooted($Value)) { return $Value }
+    if (-not $Root) { return $null }
     return [System.IO.Path]::Combine($Root, $Value)
 }
 
-$Inbox  = Resolve-ConfigPath $cfg.inbox $CabinetRoot
-$OutDir = Resolve-ConfigPath $cfg.manifestOutput $CabinetRoot
+$Inbox  = if ($CabinetRoot) { Resolve-ConfigPath $cfg.inbox $CabinetRoot } else { $null }
+$OutDir = if ($CabinetRoot) { Resolve-ConfigPath $cfg.manifestOutput $CabinetRoot } else { $null }
 
 $ExcludeSet = [System.Collections.Generic.HashSet[string]]::new(
     [string[]]@($cfg.exclude),
