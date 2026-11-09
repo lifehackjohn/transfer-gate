@@ -667,10 +667,11 @@ def main(argv=None):
     )
 
     if not config.cabinet_root:
-        print("ERROR: config must specify cabinetRoot (or archiveRoot for v1 compat)")
-        print(f"  Edit {config.config_path} and set cabinetRoot to your archive path,")
-        print("  or pass --cabinet <path> on the command line.")
-        return 2
+        # Do not hard-exit: empty shipped JSON + first-run UI config is normal.
+        # Offline PowerShell path still requires cabinetRoot for verify/apply.
+        print("WARNING: cabinetRoot is empty — server will start; set it in the UI")
+        print(f"  (Settings) or edit {config.config_path} / pass --cabinet <path>.")
+        print("  Archive verify/apply APIs need a real cabinetRoot before use.")
 
     port = args.port or config.port
 
